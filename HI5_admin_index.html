@@ -1,0 +1,2263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HI5 재료주문 관리자</title>
+<style>
+:root{
+  --ink:#172033;--muted:#747d8f;--line:#e5e9f0;--bg:#f6f8fb;--card:#fff;
+  --brand:#d85659;--brand-soft:#fff0f0;--blue:#315fc6;--blue-soft:#edf3ff;
+  --green:#198754;--green-soft:#ebf8f1;--amber:#a56a00;--amber-soft:#fff6dd;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.wrap{max-width:1500px;margin:0 auto;padding:22px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px}
+.brand h1{font-size:24px;margin:0 0 4px}.brand p{margin:0;color:var(--muted);font-size:13px}
+.top-actions{display:flex;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 14px;font-weight:800;color:var(--ink)}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.red{background:var(--brand);color:#fff;border-color:var(--brand)}
+.btn.small{padding:7px 9px;font-size:12px;border-radius:8px}
+.login{max-width:430px;margin:10vh auto;background:#fff;border:1px solid var(--line);border-radius:20px;padding:28px;box-shadow:0 14px 45px rgba(23,32,51,.08)}
+.login h2{margin:0 0 6px}.login p{margin:0 0 22px;color:var(--muted);font-size:14px;line-height:1.5}
+.field{margin:12px 0}.field label{display:block;font-size:12px;font-weight:900;margin-bottom:6px}.field input{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:16px}
+.login .btn{width:100%;margin-top:10px}
+.msg{margin-top:12px;font-size:13px;line-height:1.5;color:#b23b3b;background:#fff0f0;border:1px solid #f0bcbc;padding:10px 12px;border-radius:10px}
+.cards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:15px;min-width:0}
+.card .label{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:7px}
+.card .num{font-size:24px;font-weight:950;white-space:nowrap}.card .sub{font-size:11px;color:var(--muted);margin-top:4px}
+.filters{display:grid;grid-template-columns:2fr repeat(5,1fr) auto;gap:8px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px;margin-bottom:12px}
+.filters input,.filters select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fff;min-width:0}
+.tablebox{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.tablehead{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;border-bottom:1px solid var(--line)}
+.tablehead strong{font-size:15px}.tablehead span{font-size:12px;color:var(--muted)}
+.scroll{overflow:auto;max-height:68vh}
+table{width:100%;border-collapse:collapse;min-width:1260px}
+th{position:sticky;top:0;z-index:2;background:#f9fafc;text-align:left;font-size:11px;color:#657084;padding:11px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px;border-bottom:1px solid #edf0f4;font-size:13px;vertical-align:top}
+tr:hover td{background:#fcfcfd}
+.name{font-weight:900}.order-no{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#465067}
+.money{font-weight:950;white-space:nowrap}
+.items{max-width:330px;line-height:1.45;color:#394255}
+.badge{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:900;white-space:nowrap}
+.badge.wait{background:var(--amber-soft);color:var(--amber)}
+.badge.ok{background:var(--green-soft);color:var(--green)}
+.badge.blue{background:var(--blue-soft);color:var(--blue)}
+.status-select{border:1px solid var(--line);border-radius:8px;padding:7px 8px;background:#fff;font-size:12px;min-width:96px}
+.detailbtn{border:0;background:#f0f2f6;border-radius:8px;padding:7px 9px;font-size:12px;font-weight:900}
+.empty{text-align:center;padding:70px 20px;color:var(--muted)}
+.modalback{position:fixed;inset:0;background:rgba(13,19,31,.45);display:grid;place-items:center;padding:18px;z-index:50}
+.modal{background:#fff;width:min(680px,100%);max-height:90vh;overflow:auto;border-radius:18px;padding:20px}
+.modaltop{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:12px}
+.modaltop h3{margin:0}.close{border:0;background:#f1f3f6;width:36px;height:36px;border-radius:50%;font-size:20px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.info{border:1px solid var(--line);border-radius:11px;padding:11px}.info small{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.info b{font-size:14px}
+.itemrow{display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.itemrow:last-child{border-bottom:0}
+.loading{position:fixed;inset:0;background:rgba(255,255,255,.72);display:grid;place-items:center;z-index:60;font-weight:900}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(3,1fr)}.filters{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:650px){
+ .wrap{padding:12px}.topbar{align-items:flex-start}.brand h1{font-size:20px}
+ .cards{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}
+ .filters .search{grid-column:1/-1}.info-grid{grid-template-columns:1fr}
+}
+</style>
+
+<style id="admin-v2-style">
+.admin-nav{
+  display:flex;
+  gap:8px;
+  margin-bottom:14px;
+  flex-wrap:wrap;
+}
+.admin-nav button{
+  border:1px solid #e0e5ed;
+  background:#fff;
+  color:#586274;
+  border-radius:10px;
+  padding:10px 14px;
+  font-weight:900;
+}
+.admin-nav button.active{
+  background:#172033;
+  border-color:#172033;
+  color:#fff;
+}
+.admin-section.hidden{display:none!important}
+
+.new-order-panel{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:12px;
+}
+.admin-order-guide{
+  background:#fff;
+  border:1px solid #e2e7ef;
+  border-radius:15px;
+  padding:15px 16px;
+}
+.admin-order-guide h3{
+  margin:0 0 6px;
+  font-size:17px;
+}
+.admin-order-guide p{
+  margin:0;
+  color:#6a7486;
+  font-size:13px;
+  line-height:1.6;
+}
+.admin-order-tools{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.admin-order-tools button{
+  min-height:40px;
+  border-radius:9px;
+  font-weight:900;
+}
+.order-frame-wrap{
+  background:#fff;
+  border:1px solid #e2e7ef;
+  border-radius:16px;
+  overflow:hidden;
+}
+.order-frame-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  padding:12px 14px;
+  border-bottom:1px solid #e7ebf1;
+  background:#f9fafc;
+}
+.order-frame-head strong{font-size:14px}
+.order-frame-head span{color:#747d8f;font-size:11px}
+#adminOrderFrame{
+  display:block;
+  width:100%;
+  min-height:880px;
+  border:0;
+  background:#fff;
+}
+.product-placeholder{
+  background:#fff;
+  border:1px solid #e2e7ef;
+  border-radius:16px;
+  padding:28px;
+  text-align:center;
+}
+.product-placeholder h3{margin:0 0 7px}
+.product-placeholder p{
+  color:#6a7486;
+  font-size:13px;
+  line-height:1.7;
+  margin:0 auto;
+  max-width:650px;
+}
+.quick-row{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:12px;
+}
+.quick-card{
+  background:#fff;
+  border:1px solid #e2e7ef;
+  border-radius:13px;
+  padding:13px;
+}
+.quick-card .qtitle{font-size:11px;color:#747d8f;font-weight:900;margin-bottom:5px}
+.quick-card .qvalue{font-size:18px;font-weight:950}
+@media(max-width:900px){
+  .quick-row{grid-template-columns:1fr 1fr}
+}
+@media(max-width:650px){
+  .admin-nav{display:grid;grid-template-columns:1fr 1fr}
+  .admin-nav button:last-child{grid-column:1/-1}
+  #adminOrderFrame{min-height:760px}
+}
+</style>
+
+
+<style id="procurement-preview-style">
+.proc-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid #e2e7ef;border-radius:15px;padding:12px 14px;margin-bottom:12px}
+.proc-toolbar-left,.proc-toolbar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.proc-toolbar select,.proc-toolbar button{min-height:40px;border:1px solid #dfe4ec;background:#fff;border-radius:9px;padding:0 11px;font-weight:800}
+.proc-toolbar .primary{background:#172033;color:#fff;border-color:#172033}
+.proc-tabs{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap}
+.proc-tabs button{border:1px solid #dfe4ec;background:#fff;color:#586274;border-radius:9px;padding:9px 13px;font-weight:900}
+.proc-tabs button.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.proc-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:12px}
+.proc-summary .pcard{background:#fff;border:1px solid #e2e7ef;border-radius:13px;padding:12px}
+.proc-summary .plabel{font-size:11px;color:#747d8f;font-weight:900;margin-bottom:5px}.proc-summary .pvalue{font-size:19px;font-weight:950}
+.proc-sheet-wrap{background:#fff;border:1px solid #dfe4ec;border-radius:16px;padding:18px;overflow:auto}
+.proc-note{font-size:12px;color:#697386;line-height:1.55;margin-bottom:12px;background:#f7f9fc;border-radius:11px;padding:10px 12px}
+.excel-sheet{position:relative;margin:0 auto;min-width:760px;max-width:1180px;background:white;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.excel-sheet table{border-collapse:collapse;width:100%;table-layout:fixed;font-family:"Malgun Gothic","맑은 고딕",sans-serif;color:#111}
+.excel-sheet td{padding:3px 5px;font-size:11px;line-height:1.2;overflow:hidden;word-break:keep-all;background-clip:padding-box}
+.excel-sheet .sheet-logo{position:absolute;left:16px;top:14px;width:98px;height:auto;z-index:2;object-fit:contain}
+.proc-qty-cell{background:#fff9ce!important;text-align:center!important;font-weight:950!important}
+.proc-qty{display:inline-flex;min-width:25px;height:22px;align-items:center;justify-content:center;border-radius:6px;background:#fff2a8;color:#7b5700;font-weight:950}
+.proc-sheet-panel.hidden{display:none!important}
+.proc-excluded{font-size:11px;color:#b15a22;background:#fff5eb;border:1px solid #f0d1b7;border-radius:8px;padding:7px 9px}
+@media(max-width:900px){.proc-summary{grid-template-columns:1fr 1fr}.proc-sheet-wrap{padding:8px}.excel-sheet{transform-origin:top left}}
+</style>
+
+
+<style id="detail-split-order-style">
+#procurementSection,[data-admin-tab="procurement"]{display:none!important}
+.detail-order-sheets{display:grid;gap:14px;margin-top:14px}
+.detail-order-sheet{border:1px solid #dfe5ed;border-radius:14px;overflow:hidden;background:#fff}
+.detail-order-sheet-head{
+ display:flex;justify-content:space-between;align-items:center;gap:10px;
+ padding:12px 14px;background:#f6f8fb;border-bottom:1px solid #e3e8ef
+}
+.detail-order-sheet-head strong{font-size:16px}
+.detail-order-sheet-head span{font-size:12px;color:#6f7888;font-weight:800}
+.detail-order-sheet table{width:100%;border-collapse:collapse}
+.detail-order-sheet th,.detail-order-sheet td{padding:10px 12px;border-bottom:1px solid #edf0f4;text-align:left;font-size:13px}
+.detail-order-sheet th{background:#fbfcfd;color:#687284;font-size:11px}
+.detail-order-sheet td.num,.detail-order-sheet th.num{text-align:center;width:62px}
+.detail-order-sheet td.money,.detail-order-sheet th.money{text-align:right;white-space:nowrap}
+.detail-order-sheet-total{display:flex;justify-content:space-between;padding:12px 14px;font-weight:950;background:#fbfcfd}
+.detail-capture-note{
+ margin:8px 0 0;padding:10px 12px;border-radius:10px;background:#f4f7fb;
+ color:#5f697a;font-size:12px;line-height:1.5
+}
+.paint-capture-sheet{border:2px solid #b9c9e8}
+.paint-capture-sheet .detail-order-sheet-head{background:#eef4ff}
+@media(max-width:650px){
+ .detail-order-sheet th,.detail-order-sheet td{padding:8px 7px;font-size:11px}
+}
+</style>
+
+
+<style id="admin-v7-style">
+.manage-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.manage-toolbar h2{margin:0 0 4px;font-size:20px}.manage-toolbar p{margin:0;color:#6f7888;font-size:13px}.product-tabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}.product-tabs button{border:1px solid #dfe5ed;background:#fff;border-radius:10px;padding:9px 13px;font-weight:900}.product-tabs button.active{background:#172033;color:#fff;border-color:#172033}.product-manage-list{display:grid;gap:9px}.product-manage-row{display:grid;grid-template-columns:minmax(180px,1.6fr) minmax(130px,1fr) 120px 120px 90px 72px;gap:8px;align-items:center;background:#fff;border:1px solid #e3e8ef;border-radius:13px;padding:10px}.product-manage-row input,.product-manage-row select{width:100%;border:1px solid #dfe5ed;border-radius:9px;padding:9px;background:#fff}.product-manage-row .sale{color:#2563eb;font-weight:900}.product-manage-row .supply{color:#8a4cc7;font-weight:900}.product-manage-row .toggle{text-align:center}.product-manage-row .remove{border:0;border-radius:8px;padding:8px;background:#fff0f0;color:#b63e43;font-weight:900}.product-option-preview{grid-column:1/-1;color:#778092;font-size:11px;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-savebar{position:sticky;bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border:1px solid #dfe5ed;border-radius:12px;padding:10px 12px;margin-top:12px;box-shadow:0 7px 25px rgba(20,28,45,.08);font-size:12px;color:#707a8b}.settlement-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}.settlement-period select{border:1px solid #dfe5ed;border-radius:9px;padding:9px;background:#fff}.settlement-table{min-width:1050px}.cost-missing{color:#c74a4e;font-weight:900}.cost-ok{color:#6f43a8;font-weight:900}.category-chip{display:inline-flex;padding:4px 7px;border-radius:999px;background:#eef3fb;font-size:11px;font-weight:900}.modal-form{display:grid;gap:10px}.modal-form label{font-size:12px;font-weight:900}.modal-form input,.modal-form select{width:100%;border:1px solid #dfe5ed;border-radius:10px;padding:10px}.modal-form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:5px}@media(max-width:1000px){.product-manage-row{grid-template-columns:1fr 1fr 110px 110px}.product-manage-row .toggle,.product-manage-row .remove{grid-column:auto}.settlement-cards{grid-template-columns:1fr 1fr}}@media(max-width:650px){.product-manage-row{grid-template-columns:1fr 1fr}.settlement-cards{grid-template-columns:1fr 1fr}.manage-toolbar{align-items:flex-start;flex-direction:column}}
+</style>
+
+
+<style id="settlement-v8-style">
+<div id="settlementV11Preview" class="settlement-v11-preview">
+  <div class="settlement-v11-head">
+    <div>
+      <div class="settlement-v11-title">정산기간</div>
+      <div class="settlement-v11-sub">주문일자 + 정산상태를 함께 확인합니다.</div>
+    </div>
+    <div class="settlement-v11-presets">
+      <button type="button" data-range="first">1일 ~ 15일</button>
+      <button type="button" data-range="second">16일 ~ 말일</button>
+    </div>
+  </div>
+
+  <div class="settlement-v11-range">
+    <label>시작일 <input type="date" id="settleStartDate"></label>
+    <span>~</span>
+    <label>종료일 <input type="date" id="settleEndDate"></label>
+    <select id="settleStateFilter">
+      <option value="unsettled">미정산만</option>
+      <option value="settled">정산완료만</option>
+      <option value="all">전체</option>
+    </select>
+    <button type="button" id="settleSearchBtn">조회</button>
+  </div>
+
+  <div class="settlement-v11-summary">
+    <div><small>조회 주문</small><strong id="settlePreviewCount">0건</strong></div>
+    <div><small>판매금액</small><strong id="settlePreviewSales">0원</strong></div>
+    <div><small>공급금액</small><strong id="settlePreviewSupply">0원</strong></div>
+    <div><small>차액</small><strong id="settlementVisibleDiff" id="settlePreviewDiff">0원</strong></div>
+  </div>
+
+  <div class="settlement-v11-actions">
+    <div><b>정산 상태 변경</b><span>조회된 주문 중 필요한 건만 체크해서 처리할 수 있습니다.</span></div>
+    <div class="settlement-v11-buttons">
+      <button type="button" id="settleSelectAll">전체 선택</button>
+      <button type="button" id="settleMarkDone" class="primary">선택 항목 정산완료</button>
+      <button type="button" id="settleMarkUndo">선택 항목 미정산으로 변경</button>
+    </div>
+  </div>
+
+  
+
+<div class="settlement-status-toolbar-v13">
+  <div class="left">
+    <span class="count">선택 항목 정산상태</span>
+    <button type="button" class="primary" id="settleBulkDoneV14">선택 정산완료</button>
+    <button type="button" id="settleBulkWaitV14">선택 미정산</button>
+  </div>
+  <div class="right">
+    <button type="button" id="settleAllToggleV14">현재 목록 전체 선택</button>
+  </div>
+</div>
+
+.settlement-main-toolbar{align-items:flex-end}
+.settlement-month-wrap{display:flex;flex-direction:column;gap:5px}
+.settlement-month-wrap label{font-size:11px;font-weight:900;color:#6c7688}
+.settlement-month-wrap input{
+  min-height:42px;border:1px solid #dfe4ec;border-radius:10px;background:#fff;padding:0 12px;font-weight:850
+}
+.settlement-tabs{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px;
+  background:#fff;border:1px solid #e2e7ef;border-radius:14px;padding:8px
+}
+.settlement-tabs button,.cost-category-tabs button{
+  border:0;background:#f4f6f9;color:#667084;border-radius:9px;padding:11px 12px;font-weight:900;cursor:pointer
+}
+.settlement-tabs button.active,.cost-category-tabs button.active{background:#172033;color:#fff}
+.settlement-sheet-title{
+  display:flex;justify-content:space-between;gap:12px;align-items:center;margin:12px 0
+}
+.settlement-sheet-title h3{margin:0 0 4px;font-size:19px}
+.settlement-sheet-title p{margin:0;color:#737d8f;font-size:12px}
+.settlement-vendor-badge{
+  display:inline-flex;align-items:center;border-radius:999px;background:#eef2f7;color:#4c596d;
+  padding:7px 10px;font-size:11px;font-weight:950;white-space:nowrap
+}
+.settlement-vendor-badge.paint{background:#eef4ff;color:#315fc6}
+.settlement-note{
+  margin:0 0 12px;padding:11px 13px;border:1px solid #dbe5f8;border-radius:11px;background:#f5f8ff;
+  color:#56647a;font-size:12px;line-height:1.55
+}
+.cost-category-tabs{display:flex;gap:8px;margin:10px 0}
+.settlement-cost-list{
+  background:#fff;border:1px solid #e2e7ef;border-radius:15px;overflow:hidden
+}
+.cost-row{
+  display:grid;grid-template-columns:minmax(220px,2fr) minmax(130px,1fr) 150px 150px;
+  gap:10px;align-items:center;padding:11px 13px;border-bottom:1px solid #edf0f4
+}
+.cost-row:last-child{border-bottom:0}
+.cost-row .cost-name{font-weight:900}
+.cost-row .cost-group{font-size:11px;color:#778193;margin-top:3px}
+.cost-row label{font-size:10px;color:#778193;font-weight:900;display:block;margin-bottom:4px}
+.cost-row input{
+  width:100%;min-height:39px;border:1px solid #dfe4ec;border-radius:9px;padding:0 10px;text-align:right;font-weight:850
+}
+.cost-sale-value{font-weight:900;text-align:right}
+.cost-missing-mark{font-size:10px;color:#c2464a;font-weight:900}
+@media(max-width:780px){
+  .settlement-tabs{grid-template-columns:1fr}
+  .settlement-sheet-title{align-items:flex-start}
+  .cost-row{grid-template-columns:1fr 1fr}
+  .cost-row .cost-name-wrap{grid-column:1/-1}
+}
+</style>
+
+
+<style id="admin-v9-style">
+/* 주문관리에서 물감 주문(PNT) 한 줄 전체 연한 파란색 */
+tr.paint-order-row td{
+  background:#eef4ff !important;
+}
+tr.paint-order-row:hover td{
+  background:#e6efff !important;
+}
+tr.paint-order-row td:first-child{
+  box-shadow:inset 4px 0 0 #9db7ee;
+}
+
+/* 공급가 입력칸 */
+.cost-row input[data-cost-input]{
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.1px;
+}
+</style>
+
+
+<style id="admin-v10-style">
+.bulk-status-bar{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin:0 0 10px;
+  padding:10px 12px;
+  background:#fff;
+  border:1px solid #e2e7ef;
+  border-radius:13px;
+}
+.bulk-status-bar .bulk-count{
+  margin-right:auto;
+  font-size:12px;
+  color:#667084;
+  font-weight:900;
+}
+.bulk-status-group{
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.bulk-status-group span{
+  font-size:11px;
+  color:#747d8f;
+  font-weight:900;
+}
+.bulk-status-group select{
+  min-height:38px;
+  border:1px solid #dfe4ec;
+  border-radius:9px;
+  background:#fff;
+  padding:0 9px;
+  font-size:12px;
+  font-weight:850;
+}
+.bulk-status-group button{
+  min-height:38px;
+  border:0;
+  border-radius:9px;
+  background:#172033;
+  color:#fff;
+  padding:0 10px;
+  font-size:12px;
+  font-weight:900;
+}
+.order-check{
+  width:17px;
+  height:17px;
+  cursor:pointer;
+}
+th.check-col,td.check-col{
+  width:42px;
+  min-width:42px;
+  text-align:center;
+}
+.product-manage-row input[data-f="sale_price"]{
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  color:#2563eb;
+  font-weight:900;
+}
+@media(max-width:800px){
+  .bulk-status-bar{align-items:stretch}
+  .bulk-status-bar .bulk-count{width:100%;margin-right:0}
+  .bulk-status-group{flex:1 1 280px}
+  .bulk-status-group select{flex:1}
+}
+</style>
+
+
+<style id="settlement-v11-preview-style">
+.settlement-v11-preview{margin:14px 0 18px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px}
+.settlement-v11-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:13px}
+.settlement-v11-title{font-size:17px;font-weight:950;color:#172033}
+.settlement-v11-sub{font-size:12px;color:#778195;margin-top:3px}
+.settlement-v11-presets{display:flex;gap:7px}
+.settlement-v11-presets button,.settlement-v11-range button,.settlement-v11-buttons button{
+ border:1px solid #dce2eb;background:#fff;border-radius:9px;min-height:38px;padding:0 11px;font-weight:900;color:#465166
+}
+.settlement-v11-range{display:flex;align-items:end;gap:8px;flex-wrap:wrap;padding:12px;background:#fff;border:1px solid #e6eaf0;border-radius:12px}
+.settlement-v11-range label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:900;color:#667084}
+.settlement-v11-range input,.settlement-v11-range select{height:38px;border:1px solid #dce2eb;border-radius:8px;padding:0 9px;background:#fff}
+.settlement-v11-range #settleSearchBtn{background:#172033;color:#fff;border-color:#172033}
+.settlement-v11-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.settlement-v11-summary>div{background:#fff;border:1px solid #e6eaf0;border-radius:11px;padding:12px}
+.settlement-v11-summary small{display:block;color:#7a8496;font-weight:800;margin-bottom:4px}
+.settlement-v11-summary strong{font-size:17px;color:#172033}
+.settlement-v11-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding:11px 12px;background:#fff;border:1px solid #e6eaf0;border-radius:11px}
+.settlement-v11-actions b{display:block;font-size:13px}.settlement-v11-actions span{display:block;font-size:11px;color:#7a8496;margin-top:2px}
+.settlement-v11-buttons{display:flex;gap:6px;flex-wrap:wrap}.settlement-v11-buttons .primary{background:#172033;color:#fff;border-color:#172033}
+.settlement-v11-tablewrap{overflow:auto;margin-top:10px;border:1px solid #e6eaf0;border-radius:11px;background:#fff}
+.settlement-v11-table{width:100%;border-collapse:collapse;min-width:950px}
+.settlement-v11-table th,.settlement-v11-table td{padding:10px;border-bottom:1px solid #edf0f4;font-size:12px;text-align:left;white-space:nowrap}
+.settlement-v11-table th{background:#f7f9fc;color:#606b7d;font-weight:900}
+.settle-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:950}
+.settle-badge.wait{background:#fff3dc;color:#a46500}.settle-badge.done{background:#eaf7ef;color:#267344}
+.settlement-v11-note{font-size:11px;color:#8a93a3;margin-top:8px}
+@media(max-width:760px){.settlement-v11-summary{grid-template-columns:1fr 1fr}.settlement-v11-head,.settlement-v11-actions{align-items:stretch;flex-direction:column}.settlement-v11-presets,.settlement-v11-buttons{width:100%}}
+</style>
+
+
+<style id="admin-v12-style">
+.order-filter-v12{
+  grid-template-columns:minmax(220px,2fr) 150px 150px repeat(4,minmax(125px,1fr)) auto !important;
+}
+.order-filter-v12 input[type="date"]{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px 11px;
+  background:#fff;
+  min-height:42px;
+}
+.settlement-date-range-v12{
+  display:flex;
+  align-items:end;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.settlement-date-range-v12 label{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:11px;
+  font-weight:900;
+  color:#667084;
+}
+.settlement-date-range-v12 input[type="date"]{
+  min-height:40px;
+  border:1px solid #dfe4ec;
+  border-radius:9px;
+  padding:0 10px;
+  background:#fff;
+  font-weight:800;
+}
+.settlement-date-range-v12 .range-wave{
+  padding-bottom:9px;
+  color:#6f7888;
+  font-weight:900;
+}
+@media(max-width:1150px){
+  .order-filter-v12{grid-template-columns:1fr 1fr 1fr !important}
+  .order-filter-v12 .search{grid-column:1/-1}
+}
+@media(max-width:650px){
+  .order-filter-v12{grid-template-columns:1fr 1fr !important}
+  .order-filter-v12 .search{grid-column:1/-1}
+}
+</style>
+
+
+<style id="admin-v13-style">
+.no-col{width:54px;min-width:54px;text-align:center!important;font-variant-numeric:tabular-nums;font-weight:850;color:#667084}
+.settlement-status-toolbar-v13{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  margin:10px 0;padding:11px 12px;background:#fff;border:1px solid #e3e8ef;border-radius:11px;
+}
+.settlement-status-toolbar-v13 .left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.settlement-status-toolbar-v13 .count{font-size:12px;color:#667084;font-weight:900}
+.settlement-status-toolbar-v13 button{
+  min-height:39px;border:1px solid #dce2eb;border-radius:9px;background:#fff;
+  padding:0 11px;font-size:12px;font-weight:900;color:#465166
+}
+.settlement-status-toolbar-v13 button.primary{background:#172033;color:#fff;border-color:#172033}
+.settlement-status-toolbar-v13 select{
+  min-height:39px;border:1px solid #dce2eb;border-radius:9px;background:#fff;padding:0 10px;font-weight:850
+}
+</style>
+
+
+<style id="admin-v14-style">
+.settle-status-select{
+  min-height:36px;
+  border:1px solid #dce2eb;
+  border-radius:8px;
+  background:#fff;
+  padding:0 9px;
+  font-size:12px;
+  font-weight:900;
+}
+.settlement-v11-table tr.settled-row td{
+  background:#f1faf5 !important;
+}
+.settlement-v11-table tr.unsettled-row td{
+  background:#fffaf0 !important;
+}
+.settlement-status-toolbar-v13 .right{
+  display:flex;
+  gap:6px;
+}
+</style>
+
+
+<style id="admin-v14-hide-cost">
+#settlementCostSheet,[data-settlement-tab="cost"],[data-settle-tab="cost"]{display:none!important}
+</style>
+
+<style id="settlement-v15-style">
+#settlementV11Preview{display:none!important}
+.settlement-live-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;margin-bottom:10px;background:#fff;border:1px solid #e2e7ef;border-radius:11px}
+.settlement-live-toolbar .left,.settlement-live-toolbar .right{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.settlement-live-toolbar button{min-height:38px;border:1px solid #dce2eb;background:#fff;border-radius:9px;padding:0 11px;font-size:12px;font-weight:900;color:#465166}
+.settlement-live-toolbar button.primary{background:#172033;color:#fff;border-color:#172033}
+.settlement-live-toolbar select{min-height:38px;border:1px solid #dce2eb;background:#fff;border-radius:9px;padding:0 9px;font-weight:850}
+.settlement-row-check{width:17px;height:17px;cursor:pointer}
+.settlement-table tr.is-settled td{background:#f0faf4!important}
+.settlement-table tr.is-unsettled td{background:#fff9ec!important}
+.settlement-table tr.is-settled:hover td{background:#e8f6ee!important}
+.settlement-table tr.is-unsettled:hover td{background:#fff4dc!important}
+.settlement-state-select{min-height:34px;border:1px solid #dce2eb;border-radius:8px;background:#fff;padding:0 8px;font-size:12px;font-weight:900}
+.settled-at-text{font-size:11px;color:#657084;white-space:nowrap}
+.settle-check-col{width:44px;min-width:44px;text-align:center!important}
+</style>
+
+<style id="admin-v16-settlement-style">
+.settlement-real-actions{
+  display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;
+  border-bottom:1px solid #e7ebf1;background:#fbfcfd;
+}
+.settlement-real-actions button{
+  min-height:38px;border:1px solid #dce2eb;border-radius:9px;
+  background:#fff;padding:0 11px;font-size:12px;font-weight:900;color:#465166;
+}
+.settlement-real-actions .settlement-mark-done{
+  background:#172033;color:#fff;border-color:#172033;
+}
+.settlement-real-row.unsettled-row td{background:#fff9ec !important}
+.settlement-real-row.settled-row td{background:#edf8f2 !important}
+.settlement-real-status{
+  min-height:34px;border:1px solid #dce2eb;border-radius:8px;
+  background:#fff;padding:0 8px;font-size:12px;font-weight:900;
+}
+.settlement-real-at{white-space:nowrap;color:#667084;font-size:11px}
+</style>
+
+\n<style id="admin-v18-settlement-style">\ntr.is-settled td{background:#edf8f2 !important}\ntr.is-unsettled td{background:#fff9ec !important}\n.settlement-live-toolbar .primary{background:#172033!important;color:#fff!important;border-color:#172033!important}\n</style>\n
+
+<style id="admin-v19-clean-style">
+#settlementV11Preview,.settlement-v11-preview,.settlement-status-toolbar-v13{display:none!important}
+.settlement-table tr.v19-settled td{background:#edf8f2!important}
+.settlement-table tr.v19-unsettled td{background:#fff9ec!important}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style id="admin-v30-style">
+.product-top-actions-v30{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.product-main-row-v30{grid-template-columns:52px minmax(220px,1.7fr) minmax(170px,1fr) 120px 120px 92px 72px!important}
+.product-no-v30{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#667084}
+.product-options-editor-v30{grid-column:2/-1;margin-top:4px;padding:10px 12px 12px;background:#f8fafc;border:1px solid #e4e9f0;border-radius:10px}
+.option-editor-head-v30{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.option-editor-head-v30 b{font-size:12px;color:#465166}.option-editor-head-v30 span{margin-left:6px;font-size:11px;color:#8992a2}
+.option-editor-head-v30 button,.option-row-v30 button{min-height:34px;border:1px solid #dce2eb;border-radius:8px;background:#fff;font-size:11px;font-weight:900;color:#465166}
+.option-list-v30{display:flex;flex-direction:column;gap:6px}.option-row-v30{display:grid;grid-template-columns:38px minmax(220px,1fr) 38px 38px 58px;gap:6px;align-items:center}
+.option-no-v30{text-align:center;font-size:12px;font-weight:900;color:#677184}.option-row-v30 input{min-height:36px;border:1px solid #dce2eb;border-radius:8px;background:#fff;padding:0 10px;font-size:12px;font-weight:800}
+.option-row-v30 .option-delete-v30{color:#c84b4b;background:#fff5f5;border-color:#f0c9c9}
+#tbody tr.payment-waiting-row td,#tbody tr.payment-waiting-row td *{color:#d93025!important}
+#tbody tr.payment-waiting-row select.status-select{color:#d93025!important;border-color:#efb1ad!important;background:#fff7f6!important}
+.settlement-live-toolbar .right{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+@media(max-width:900px){.product-main-row-v30{grid-template-columns:44px 1fr 1fr!important}.product-options-editor-v30{grid-column:1/-1}}
+</style>
+
+<style id="admin-v33-detail-style">
+.detail-order-sheets{display:grid;gap:14px;margin-top:14px}.detail-order-sheet{border:1px solid #dfe5ed;border-radius:14px;overflow:hidden;background:#fff}.detail-order-sheet-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;background:#f7f9fc;border-bottom:1px solid #e7ebf1}.detail-order-sheet-head strong{font-size:16px}.detail-order-sheet-actions{display:flex;align-items:center;gap:8px}.detail-order-sheet-actions span{font-size:12px;color:#6f7888;font-weight:800}.detail-image-download-v33{border:1px solid #dce2eb;background:#172033;color:#fff;border-radius:8px;min-height:34px;padding:0 11px;font-size:11px;font-weight:900;cursor:pointer}.detail-order-sheet table{width:100%;border-collapse:collapse}.detail-order-sheet th,.detail-order-sheet td{padding:10px 12px;border-bottom:1px solid #edf0f4;text-align:left;font-size:13px}.detail-order-sheet th{background:#fbfcfd;color:#687284;font-size:11px}.detail-order-sheet td.num,.detail-order-sheet th.num{text-align:center;width:70px}.detail-order-sheet td.money,.detail-order-sheet th.money{text-align:right;white-space:nowrap}.detail-order-sheet-total{display:flex;justify-content:space-between;padding:12px 14px;font-weight:950;background:#fbfcfd}.paint-capture-sheet .detail-order-sheet-head{background:#eef4ff}.detail-order-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.detail-order-meta .info{padding:10px 12px;border:1px solid #e5e9ef;border-radius:10px;background:#fff}.detail-order-meta small{display:block;color:#788294;font-size:11px;margin-bottom:4px}.detail-order-meta b{font-size:13px}.detail-capture-note{padding:9px 14px;background:#f4f7fb;color:#6c7586;font-size:11px}@media(max-width:700px){.detail-order-meta{grid-template-columns:1fr 1fr}.detail-order-sheet th,.detail-order-sheet td{padding:8px 7px;font-size:11px}}
+</style>
+
+
+<style id="admin-v34-db-style">
+.product-db-badge-v34{
+  display:inline-flex;align-items:center;gap:6px;
+  margin-left:8px;padding:5px 9px;border-radius:999px;
+  background:#eaf7ef;color:#267344;font-size:11px;font-weight:900;
+}
+.product-db-badge-v34.loading{background:#fff6df;color:#9a6a00}
+.product-db-badge-v34.error{background:#fff0f0;color:#b34848}
+</style>
+
+</head>
+<body>
+<div id="loading" class="loading hidden">처리 중...</div>
+
+<section id="loginView" class="login">
+  <h2>HI5 재료주문 관리자</h2>
+  <p>행정팀 전용 페이지입니다. Supabase 관리자 계정으로 로그인해 주세요.</p>
+  <div class="field"><label>이메일</label><input id="loginEmail" type="email" autocomplete="username" placeholder="admin@example.com"></div>
+  <div class="field"><label>비밀번호</label><input id="loginPw" type="password" autocomplete="current-password" placeholder="비밀번호"></div>
+  <button class="btn primary" id="loginBtn">관리자 로그인</button>
+  <button class="btn" id="signupBtn" style="margin-top:8px">관리자 계정 최초 생성</button>
+  <div style="margin-top:8px;color:#7a8292;font-size:12px;line-height:1.5">
+    최초 1회만 사용하세요. 계정 생성 후에는 Supabase에서 신규 가입 허용을 다시 꺼두는 것을 권장합니다.
+  </div>
+  <div id="loginMsg" class="msg hidden"></div>
+</section>
+
+<main id="appView" class="wrap hidden">
+  <div class="topbar">
+    <div class="brand"><h1>HI5 재료주문 관리자</h1><p>주문 · 입금 · 발주 · 배부 현황</p></div>
+    <div class="top-actions"><button class="btn" id="refreshBtn">새로고침</button><button class="btn red" id="logoutBtn">로그아웃</button></div>
+  
+</div>
+
+  <nav class="admin-nav" aria-label="관리자 메뉴">
+    <button type="button" class="active" data-admin-tab="orders">📋 주문관리</button>
+    <button type="button" data-admin-tab="settlement">💰 정산관리</button>
+    
+    <button type="button" data-admin-tab="products">🧰 품목관리</button>
+  </nav>
+
+  <section id="ordersSection" class="admin-section">
+  <section class="cards">
+    <div class="card"><div class="label">오늘 주문</div><div class="num" id="todayCount">0건</div><div class="sub" id="todayAmount">0원</div></div>
+    <div class="card"><div class="label">이번 주 주문</div><div class="num" id="weekCount">0건</div><div class="sub" id="weekAmount">0원</div></div>
+    <div class="card"><div class="label">이번 달 주문</div><div class="num" id="monthCount">0건</div><div class="sub" id="monthAmount">0원</div></div>
+    <div class="card"><div class="label">입금대기</div><div class="num" id="payWait">0건</div><div class="sub" id="payWaitAmount">0원</div></div>
+    <div class="card"><div class="label">발주대기</div><div class="num" id="orderWait">0건</div><div class="sub">입금확인 후 발주</div></div>
+    <div class="card"><div class="label">배부대기</div><div class="num" id="deliveryWait">0건</div><div class="sub">학생/보조강사 전달</div></div>
+  </section>
+
+  <section class="filters order-filter-v12">
+    <input class="search" id="search" placeholder="학생명 · 반 · 전화번호 · 주문번호 · 전공 검색">
+    <input type="date" id="orderStartDate" aria-label="주문 시작일">
+    <input type="date" id="orderEndDate" aria-label="주문 종료일">
+    <select id="major">
+      <option value="">전체 반</option>
+      <option value="기초디자인반">기초디자인반</option>
+      <option value="애니(상표·칸·포폴)">애니(상표·칸·포폴)</option>
+      <option value="하이클래스/학종반">하이클래스/학종반</option>
+    </select>
+    <select id="payment"><option value="">전체 입금</option><option>입금대기</option><option>입금완료</option></select>
+    <select id="orderStatus"><option value="">전체 발주</option><option>발주대기</option><option>발주완료</option><option>배송중</option><option>입고완료</option></select>
+    <select id="delivery"><option value="">전체 배부</option><option>배부대기</option><option>배부완료</option></select>
+    <button class="btn" id="resetBtn">필터 초기화</button>
+  </section>
+
+  
+<div class="bulk-status-bar" id="bulkStatusBar">
+  <div class="bulk-count">선택 <b id="bulkSelectedCount">0</b>건</div>
+
+  <div class="bulk-status-group">
+    <span>입금</span>
+    <select id="bulkPayment">
+      <option value="">상태 선택</option>
+      <option value="입금대기">입금대기</option>
+      <option value="입금완료">입금완료</option>
+    </select>
+    <button type="button" id="bulkPaymentApply">일괄 변경</button>
+  </div>
+
+  <div class="bulk-status-group">
+    <span>발주</span>
+    <select id="bulkOrderStatus">
+      <option value="">상태 선택</option>
+      <option value="발주대기">발주대기</option>
+      <option value="발주완료">발주완료</option>
+      <option value="배송중">배송중</option>
+      <option value="입고완료">입고완료</option>
+    </select>
+    <button type="button" id="bulkOrderApply">일괄 변경</button>
+  </div>
+
+  <div class="bulk-status-group">
+    <span>배부</span>
+    <select id="bulkDelivery">
+      <option value="">상태 선택</option>
+      <option value="배부대기">배부대기</option>
+      <option value="배부완료">배부완료</option>
+    </select>
+    <button type="button" id="bulkDeliveryApply">일괄 변경</button>
+  </div>
+</div>
+
+<section class="tablebox">
+    <div class="tablehead"><strong>주문 목록</strong><span id="resultCount">0건</span></div>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th class="check-col"><input type="checkbox" id="selectAllOrders" class="order-check" aria-label="전체 선택"></th>
+          <th class="no-col">No.</th>
+          <th>주문일시</th><th>학생</th><th>전공/반</th><th>주문번호</th><th>주문내역</th><th>금액</th>
+          <th>입금</th><th>발주</th><th>배부</th><th>상세</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty" class="empty hidden">조건에 맞는 주문이 없습니다.</div>
+    </div>
+  </section>
+  </section>
+
+<section id="settlementSection" class="admin-section hidden">
+  <div class="manage-toolbar settlement-main-toolbar">
+    <div>
+      <h2>정산관리</h2>
+      <p>월별 주문을 기준으로 미술재료와 물감재료를 각각 따로 정산합니다.</p>
+    </div>
+    <div>
+      <div class="settlement-month-wrap">
+        <label for="settlementMonth">정산월</label>
+        <input type="month" id="settlementMonth">
+      </div>
+      <div class="settlement-date-range-v12">
+        <label>정산 시작일
+          <input type="date" id="settlementStartDate">
+        </label>
+        <span class="range-wave">~</span>
+        <label>정산 종료일
+          <input type="date" id="settlementEndDate">
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="settlement-tabs">
+    <button type="button" class="active" data-settlement-tab="material">미술재료 정산</button>
+    <button type="button" data-settlement-tab="paint">물감재료 정산</button>
+    
+  </div>
+
+  <section id="settlementMaterialSheet" class="settlement-sheet">
+    <div class="settlement-sheet-title">
+      <div>
+        <h3>미술재료 정산</h3>
+        <p>선택한 월의 ART 주문만 집계합니다.</p>
+      </div>
+      <span class="settlement-vendor-badge">미술재료</span>
+    </div>
+    <div class="settlement-cards">
+      <div class="card"><div class="label">학생 결제액</div><div class="num" id="materialSales">0원</div><div class="sub">판매가 합계</div></div>
+      <div class="card"><div class="label">업체 정산액</div><div class="num" id="materialSupply">0원</div><div class="sub">공급가 합계</div></div>
+      <div class="card"><div class="label">차액</div><div class="num" id="materialMargin">0원</div><div class="sub">판매가 - 공급가</div></div>
+      <div class="card"><div class="label">공급가 미입력</div><div class="num" id="materialMissing">0종</div><div class="sub">공급가에서 입력</div></div>
+    </div>
+    <div class="settlement-live-toolbar" data-live-toolbar="material">
+      <div class="left">
+        <select id="materialSettlementFilter">
+          <option value="all">전체</option><option value="미정산">미정산</option><option value="정산완료">정산완료</option>
+        </select>
+        <button type="button" class="primary" data-settle-bulk="material" data-state="정산완료">선택 정산완료</button>
+        <button type="button" data-settle-bulk="material" data-state="미정산">선택 미정산</button>
+      </div>
+      <div class="right">
+        <button type="button" data-settle-export="material" data-export-type="excel">선택 엑셀 다운로드</button>
+        <button type="button" data-settle-export="material" data-export-type="png">선택 이미지 다운로드</button>
+        <button type="button" data-settle-all="material">현재 목록 전체 선택</button>
+      </div>
+    </div>
+    <div class="tablebox">
+      <div class="tablehead"><strong>미술재료 정산 상세</strong><span id="materialSettlementCount">0건</span></div>
+      <div class="scroll">
+        <table class="settlement-table">
+          <thead><tr><th class="settle-check-col"><input type="checkbox" class="settlement-row-check" data-master-check="material"></th><th class="no-col">No.</th><th>주문일</th><th>학생</th><th>품목</th><th>수량</th><th>판매가</th><th>공급가</th><th>차액</th><th>정산상태</th><th>정산일시</th></tr></thead>
+          <tbody id="materialSettlementBody"></tbody>
+        </table>
+        <div id="materialSettlementEmpty" class="empty hidden">선택한 월의 미술재료 주문이 없습니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="settlementPaintSheet" class="settlement-sheet hidden">
+    <div class="settlement-sheet-title">
+      <div>
+        <h3>물감재료 정산</h3>
+        <p>선택한 월의 PNT 주문을 모아 필통 업체 정산용 금액을 계산합니다.</p>
+      </div>
+      <span class="settlement-vendor-badge paint">필통 · 물감</span>
+    </div>
+    <div class="settlement-cards">
+      <div class="card"><div class="label">학생 결제액</div><div class="num" id="paintSales">0원</div><div class="sub">판매가 합계</div></div>
+      <div class="card"><div class="label">필통 정산액</div><div class="num" id="paintSupply">0원</div><div class="sub">공급가 합계</div></div>
+      <div class="card"><div class="label">차액</div><div class="num" id="paintMargin">0원</div><div class="sub">판매가 - 공급가</div></div>
+      <div class="card"><div class="label">공급가 미입력</div><div class="num" id="paintMissing">0종</div><div class="sub">공급가에서 입력</div></div>
+    </div>
+    <div class="settlement-note">
+      월말에 이 화면의 <b>필통 정산액</b>을 기준으로 정산서를 확인하고 업체에 송금하는 용도로 사용할 수 있습니다.
+    </div>
+    <div class="settlement-live-toolbar" data-live-toolbar="paint">
+      <div class="left">
+        <select id="paintSettlementFilter">
+          <option value="all">전체</option><option value="미정산">미정산</option><option value="정산완료">정산완료</option>
+        </select>
+        <button type="button" class="primary" data-settle-bulk="paint" data-state="정산완료">선택 정산완료</button>
+        <button type="button" data-settle-bulk="paint" data-state="미정산">선택 미정산</button>
+      </div>
+      <div class="right">
+        <button type="button" data-settle-export="paint" data-export-type="excel">선택 엑셀 다운로드</button>
+        <button type="button" data-settle-export="paint" data-export-type="png">선택 이미지 다운로드</button>
+        <button type="button" data-settle-all="paint">현재 목록 전체 선택</button>
+      </div>
+    </div>
+    <div class="tablebox">
+      <div class="tablehead"><strong>물감재료 정산 상세</strong><span id="paintSettlementCount">0건</span></div>
+      <div class="scroll">
+        <table class="settlement-table">
+          <thead><tr><th class="settle-check-col"><input type="checkbox" class="settlement-row-check" data-master-check="paint"></th><th class="no-col">No.</th><th>주문일</th><th>학생</th><th>구분</th><th>품목</th><th>수량</th><th>판매가</th><th>공급가</th><th>차액</th><th>정산상태</th><th>정산일시</th></tr></thead>
+          <tbody id="paintSettlementBody"></tbody>
+        </table>
+        <div id="paintSettlementEmpty" class="empty hidden">선택한 월의 물감재료 주문이 없습니다.</div>
+      </div>
+    </div>
+  </section>
+
+  
+</section>
+
+<section id="productsSection" class="admin-section hidden">
+  <div class="manage-toolbar">
+    <div>
+      <h2>품목관리</h2>
+      <p>학생 주문페이지와 같은 분류로 관리합니다. 판매가와 공급가는 서로 별도로 저장됩니다.</p>
+    </div>
+    <div class="product-top-actions-v30">
+      <button class="btn" id="productExcelImportBtn" type="button">엑셀 업로드</button>
+      <button class="btn" id="productExcelExportBtn" type="button">엑셀 다운로드</button>
+      <button class="btn primary" id="addProductBtn">+ 품목 추가</button>
+      <input type="file" id="productExcelFileInput" accept=".xlsx,.xls,.csv" hidden>
+    </div>
+  </div>
+  <div class="product-tabs">
+    <button class="active" data-product-tab="material">미술재료</button>
+    <button data-product-tab="design">디자인 물감</button>
+    <button data-product-tab="ani">애니 물감</button>
+  </div>
+  <div id="productManageList" class="product-manage-list"></div>
+  <div class="product-savebar"><span id="productSaveMsg">변경사항은 이 PC에 자동 저장됩니다.</span><span id="productDbBadgeV34" class="product-db-badge-v34">Supabase 연동</span><button class="btn primary" id="saveProductsBtn">변경 저장</button></div>
+</section>
+</main>
+
+<div id="modalBack" class="modalback hidden">
+  <div class="modal">
+    <div class="modaltop"><h3>주문 상세</h3><button class="close" id="closeModal">×</button></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://hcacnnlpkrupkmkicjzz.supabase.co";
+const API_KEY = "sb_publishable_gfG2nriEU9lt9atvVJTqgA_YZjk_NAV";
+let token = sessionStorage.getItem("hi5_admin_token") || "";
+let orders = [];
+
+const $ = id => document.getElementById(id);
+const won = n => Number(n||0).toLocaleString("ko-KR")+"원";
+const esc = s => { const d=document.createElement("div"); d.textContent=s??""; return d.innerHTML; };
+
+function showLoading(v){ $("loading").classList.toggle("hidden",!v); }
+function seoulDate(d){ return new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",year:"2-digit",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(d)); }
+function localParts(d){ const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(d)); const o={};parts.forEach(p=>o[p.type]=p.value);return `${o.year}-${o.month}-${o.day}`; }
+function todayKey(){ return localParts(new Date()); }
+function weekStartKey(){
+  const now=new Date(); const day=Number(new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Seoul",weekday:"short"}).format(now).replace(/Sun|Mon|Tue|Wed|Thu|Fri|Sat/,m=>({Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[m])));
+  const kday = day===0 ? 7 : day;
+  const d=new Date(now.getTime()-(kday-1)*86400000); return localParts(d);
+}
+function monthKey(){ return todayKey().slice(0,7); }
+
+function parseItems(v){
+  try{
+    const a=typeof v==="string"?JSON.parse(v):v;
+    return Array.isArray(a)?a:[];
+  }catch(e){return []}
+}
+function itemSummary(v){
+  const a=parseItems(v);
+  if(!a.length) return "-";
+  return a.map(x=>`${x.name||"품목"}${x.variant&&x.variant!=="-"?`(${x.variant})`:""} × ${x.qty||1}`).join(", ");
+}
+function badge(v,type){
+  let c="wait";
+  if(String(v).includes("완료")) c="ok";
+  else if(String(v).includes("배송") || String(v).includes("입고")) c="blue";
+  return `<span class="badge ${c}">${esc(v||"-")}</span>`;
+}
+function statusSelect(id,field,value,options){
+  return `<select class="status-select" data-id="${id}" data-field="${field}">${options.map(o=>`<option ${o===value?"selected":""}>${o}</option>`).join("")}</select>`;
+}
+
+async function api(path, opts={}){
+  const headers = Object.assign({"apikey":API_KEY,"Content-Type":"application/json"}, opts.headers||{});
+  if(token) headers["Authorization"]="Bearer "+token;
+  const res=await fetch(SUPABASE_URL+path,Object.assign({},opts,{headers}));
+  let body=null; try{body=await res.json()}catch(e){}
+  if(!res.ok) throw new Error((body&&body.message)||("HTTP "+res.status));
+  return body;
+}
+
+async function login(){
+  const email=$("loginEmail").value.trim(), password=$("loginPw").value;
+  $("loginMsg").classList.add("hidden");
+  if(!email||!password){$("loginMsg").textContent="이메일과 비밀번호를 입력해 주세요.";$("loginMsg").classList.remove("hidden");return;}
+  showLoading(true);
+  try{
+    const res=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"apikey":API_KEY,"Content-Type":"application/json"},body:JSON.stringify({email,password})});
+    const d=await res.json();
+    if(!res.ok) throw new Error(d.error_description||d.msg||"로그인 실패");
+    token=d.access_token; sessionStorage.setItem("hi5_admin_token",token);
+    $("loginView").classList.add("hidden"); $("appView").classList.remove("hidden");
+    await loadOrders();
+  }catch(e){$("loginMsg").textContent="로그인 실패: "+e.message;$("loginMsg").classList.remove("hidden");}
+  finally{showLoading(false);}
+}
+async function loadOrders(){
+  showLoading(true);
+  try{
+    orders=await api("/rest/v1/orders?select=*&order=created_at.desc");
+    updateStats(); render();
+  }catch(e){
+    alert("주문목록을 불러오지 못했습니다. 관리자 SELECT 정책을 확인해 주세요.\\n\\n"+e.message);
+  }finally{showLoading(false);}
+}
+async function updateStatus(id,field,value,el){
+  el.disabled=true;
+  try{
+    await api(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,{method:"PATCH",headers:{"Prefer":"return=minimal"},body:JSON.stringify({[field]:value})});
+    const x=orders.find(o=>String(o.id)===String(id)); if(x)x[field]=value;
+    updateStats(); render(false);
+  }catch(e){alert("상태 변경 실패: "+e.message);await loadOrders();}
+  finally{el.disabled=false;}
+}
+function filtered(){
+  const q=String($("search").value||"").trim().replace(/\s+/g," ").toLowerCase();
+  const start=$("orderStartDate")?.value||"";
+  const end=$("orderEndDate")?.value||"";
+  const maj=$("major").value, pay=$("payment").value, ord=$("orderStatus").value, del=$("delivery").value;
+
+  return orders.filter(o=>{
+    const hay=[
+      o.student_name,
+      o.class_name,
+      o.phone,
+      o.order_no,
+      o.major,
+      itemSummary(o.items)
+    ].map(v=>String(v||"").replace(/\s+/g," ").toLowerCase()).join(" ");
+
+    const d=localParts(o.created_at);
+
+    if(q && !hay.includes(q)) return false;
+    if(maj && o.major!==maj) return false;
+    if(pay && o.payment_status!==pay) return false;
+    if(ord && o.order_status!==ord) return false;
+    if(del && o.delivery_status!==del) return false;
+    if(start && d<start) return false;
+    if(end && d>end) return false;
+
+    return true;
+  });
+}
+
+function selectedOrderIds(){
+  return Array.from(document.querySelectorAll(".row-order-check:checked")).map(x=>x.dataset.orderId);
+}
+function updateBulkSelectedCount(){
+  const checks=Array.from(document.querySelectorAll(".row-order-check"));
+  const checked=checks.filter(x=>x.checked);
+  if($("bulkSelectedCount"))$("bulkSelectedCount").textContent=checked.length;
+  const all=$("selectAllOrders");
+  if(all){
+    all.checked=checks.length>0 && checked.length===checks.length;
+    all.indeterminate=checked.length>0 && checked.length<checks.length;
+  }
+}
+async function bulkUpdateStatus(field,value){
+  const ids=selectedOrderIds();
+  if(!ids.length){alert("변경할 주문을 먼저 선택해 주세요.");return;}
+  if(!value){alert("변경할 상태를 선택해 주세요.");return;}
+
+  if(!confirm(ids.length+"건의 상태를 '"+value+"'(으)로 일괄 변경할까요?"))return;
+
+  showLoading(true);
+  try{
+    for(const id of ids){
+      await api(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,{
+        method:"PATCH",
+        headers:{"Prefer":"return=minimal"},
+        body:JSON.stringify({[field]:value})
+      });
+      const x=orders.find(o=>String(o.id)===String(id));
+      if(x)x[field]=value;
+    }
+    updateStats();
+    render(false);
+  }catch(e){
+    alert("일괄 상태 변경 실패: "+e.message);
+    await loadOrders();
+  }finally{
+    showLoading(false);
+  }
+}
+
+function render(scrollTop=true){
+  const a=filtered(); $("resultCount").textContent=a.length+"건";
+  $("empty").classList.toggle("hidden",a.length>0);
+  $("tbody").innerHTML=a.map((o,i)=>`<tr class="${String(o.order_no||'').startsWith('PNT')?'paint-order-row':''}">
+    <td class="check-col"><input type="checkbox" class="order-check row-order-check" data-order-id="${o.id}" aria-label="주문 선택"></td>
+    <td class="no-col">${i+1}</td>
+    <td>${seoulDate(o.created_at)}</td>
+    <td><div class="name">${esc(o.student_name)}</div><div style="color:#7a8292;font-size:11px">${esc(o.phone||"")}</div></td>
+    <td>${esc(o.major||"")} / ${esc(o.class_name||"")}</td>
+    <td class="order-no">${esc(o.order_no||"")}</td>
+    <td class="items">${esc(itemSummary(o.items))}</td>
+    <td class="money">${won(o.total_amount)}</td>
+    <td>${statusSelect(o.id,"payment_status",o.payment_status||"입금대기",["입금대기","입금완료"])}</td>
+    <td>${statusSelect(o.id,"order_status",o.order_status||"발주대기",["발주대기","발주완료","배송중","입고완료"])}</td>
+    <td>${statusSelect(o.id,"delivery_status",o.delivery_status||"배부대기",["배부대기","배부완료"])}</td>
+    <td><button class="detailbtn" data-detail="${o.id}">보기</button></td>
+  </tr>`).join("");
+  document.querySelectorAll(".status-select").forEach(el=>el.addEventListener("change",()=>updateStatus(el.dataset.id,el.dataset.field,el.value,el)));
+  document.querySelectorAll("[data-detail]").forEach(b=>b.addEventListener("click",()=>openDetail(b.dataset.detail)));
+
+  document.querySelectorAll(".row-order-check").forEach(c=>c.addEventListener("change",updateBulkSelectedCount));
+  const allBox=$("selectAllOrders");
+  if(allBox){
+    allBox.checked=false;
+    allBox.indeterminate=false;
+  }
+  updateBulkSelectedCount();
+}
+function statsFor(pred){const a=orders.filter(pred);return {count:a.length,amount:a.reduce((s,x)=>s+Number(x.total_amount||0),0)}}
+function updateStats(){
+  const tk=todayKey(),wk=weekStartKey(),mk=monthKey();
+  const t=statsFor(o=>localParts(o.created_at)===tk), w=statsFor(o=>localParts(o.created_at)>=wk), m=statsFor(o=>localParts(o.created_at).startsWith(mk));
+  const pw=statsFor(o=>(o.payment_status||"입금대기")==="입금대기");
+  $("todayCount").textContent=t.count+"건"; $("todayAmount").textContent=won(t.amount);
+  $("weekCount").textContent=w.count+"건"; $("weekAmount").textContent=won(w.amount);
+  $("monthCount").textContent=m.count+"건"; $("monthAmount").textContent=won(m.amount);
+  $("payWait").textContent=pw.count+"건"; $("payWaitAmount").textContent=won(pw.amount);
+  $("orderWait").textContent=orders.filter(o=>(o.order_status||"발주대기")==="발주대기").length+"건";
+  $("deliveryWait").textContent=orders.filter(o=>(o.delivery_status||"배부대기")==="배부대기").length+"건";
+}
+function groupDetailItems(items){
+  const map=new Map();
+  (items||[]).forEach(x=>{
+    const name=String(x.name||'품목').trim();
+    const variant=String(x.variant||'-').trim()||'-';
+    const key=name+'||'+variant;
+    if(!map.has(key))map.set(key,{name,variant,qty:0,amount:0});
+    const g=map.get(key);g.qty+=Number(x.qty||1);g.amount+=Number(x.amount||0);
+  });
+  return Array.from(map.values());
+}
+function detailKind(o){const no=String(o.order_no||'');if(no.startsWith('ART'))return'material';if(no.startsWith('PNT'))return'paint';return'legacy'}
+function isPaintItem(x){return /패스|미션골드|포스터칼라 A|SWC|홀베인|조색|W\d{3}|컴포우즈|헬리오|세레스트|오커|카민|크림슨|코발트|바이올렛|오페라|시에나|엄버|세피아/i.test(String(x.name||'')+' '+String(x.variant||''))}
+function detailSheetHtml(title,rows,kind){
+  const grouped=groupDetailItems(rows),total=grouped.reduce((a,r)=>a+Number(r.amount||0),0);
+  return `<div class="detail-order-sheet ${kind==='paint'?'paint-capture-sheet':''}" data-detail-sheet-kind="${kind}">
+  <div class="detail-order-sheet-head"><strong>${title}</strong><div class="detail-order-sheet-actions"><span>${grouped.length}종</span><button type="button" class="detail-image-download-v33">이미지 다운로드</button></div></div>
+  <table><thead><tr><th class="num">No.</th><th>품목명</th><th>종류</th><th class="num">수량</th><th class="money">금액</th></tr></thead><tbody>${grouped.map((r,i)=>`<tr><td class="num">${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.variant)}</td><td class="num">${r.qty}</td><td class="money">${won(r.amount)}</td></tr>`).join('')}</tbody></table>
+  <div class="detail-order-sheet-total"><span>주문금액 총계</span><span>${won(total)}</span></div><div class="detail-capture-note">업체 발주용: 동일 품목 + 동일 종류는 수량과 금액을 합산했습니다.</div></div>`;
+}
+function openDetail(id){
+  const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
+  const items=parseItems(o.items),kind=detailKind(o);let material=[],paint=[];
+  if(kind==='material')material=items;else if(kind==='paint')paint=items;else items.forEach(x=>(isPaintItem(x)?paint:material).push(x));
+  $("modalBody").innerHTML=`<div class="detail-order-meta"><div class="info"><small>주문번호</small><b>${esc(o.order_no)}</b></div><div class="info"><small>주문일시</small><b>${seoulDate(o.created_at)}</b></div><div class="info"><small>학생</small><b>${esc(o.student_name)} (${esc(o.class_name)})</b></div><div class="info"><small>전공</small><b>${esc(o.major)}</b></div><div class="info"><small>휴대폰</small><b>${esc(o.phone)}</b></div><div class="info"><small>총 금액</small><b>${won(o.total_amount)}</b></div></div><div class="detail-order-sheets">${material.length?detailSheetHtml('미술재료 발주표',material,'material'):''}${paint.length?detailSheetHtml('물감재료 발주표',paint,'paint'):''}</div>`;
+  $("modalBack").dataset.orderId=String(o.id);$("modalBack").classList.remove("hidden");
+}
+
+["search","orderStartDate","orderEndDate","major","payment","orderStatus","delivery"].forEach(id=>$(id).addEventListener(id==="search"?"input":"change",()=>render(false)));
+$("resetBtn").onclick=()=>{["search","orderStartDate","orderEndDate","major","payment","orderStatus","delivery"].forEach(id=>$(id).value="");render(false);}
+$("selectAllOrders").addEventListener("change",function(){
+  document.querySelectorAll(".row-order-check").forEach(c=>c.checked=this.checked);
+  updateBulkSelectedCount();
+});
+$("bulkPaymentApply").onclick=()=>bulkUpdateStatus("payment_status",$("bulkPayment").value);
+$("bulkOrderApply").onclick=()=>bulkUpdateStatus("order_status",$("bulkOrderStatus").value);
+$("bulkDeliveryApply").onclick=()=>bulkUpdateStatus("delivery_status",$("bulkDelivery").value);
+
+
+async function signupAdmin(){
+  const email=$("loginEmail").value.trim(), password=$("loginPw").value;
+  $("loginMsg").classList.add("hidden");
+  if(!email||!password){
+    $("loginMsg").textContent="이메일과 비밀번호를 입력해 주세요.";
+    $("loginMsg").classList.remove("hidden");
+    return;
+  }
+  if(password.length < 8){
+    $("loginMsg").textContent="비밀번호는 8자 이상으로 설정해 주세요.";
+    $("loginMsg").classList.remove("hidden");
+    return;
+  }
+  showLoading(true);
+  try{
+    const res=await fetch(SUPABASE_URL+"/auth/v1/signup",{
+      method:"POST",
+      headers:{"apikey":API_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({email,password})
+    });
+    const d=await res.json();
+    if(!res.ok) throw new Error(d.msg||d.error_description||d.message||"계정 생성 실패");
+    $("loginMsg").textContent="관리자 계정이 생성되었습니다. 같은 이메일/비밀번호로 로그인해 주세요.";
+    $("loginMsg").style.color="#176b45";
+    $("loginMsg").style.background="#edf8f2";
+    $("loginMsg").style.borderColor="#bfe6d1";
+    $("loginMsg").classList.remove("hidden");
+  }catch(e){
+    $("loginMsg").textContent="계정 생성 실패: "+e.message;
+    $("loginMsg").style.color="#b23b3b";
+    $("loginMsg").style.background="#fff0f0";
+    $("loginMsg").style.borderColor="#f0bcbc";
+    $("loginMsg").classList.remove("hidden");
+  }finally{
+    showLoading(false);
+  }
+}
+
+$("signupBtn").onclick=signupAdmin;
+$("loginBtn").onclick=login;
+$("loginPw").addEventListener("keydown",e=>{if(e.key==="Enter")login()});
+$("logoutBtn").onclick=()=>{sessionStorage.removeItem("hi5_admin_token");token="";location.reload();}
+$("refreshBtn").onclick=loadOrders;
+$("closeModal").onclick=()=>$("modalBack").classList.add("hidden");
+$("modalBack").addEventListener("click",e=>{if(e.target===$("modalBack"))$("modalBack").classList.add("hidden")});
+
+if(token){
+  $("loginView").classList.add("hidden"); $("appView").classList.remove("hidden"); loadOrders();
+}
+</script>
+
+<script id="admin-v2-runtime">
+(function(){
+  function showTab(tab){
+    var map={
+      orders:'ordersSection',
+      procurement:'procurementSection',
+      products:'productsSection',
+      settlement:'settlementSection'
+    };
+    Object.keys(map).forEach(function(k){
+      var el=document.getElementById(map[k]);
+      if(el)el.classList.toggle('hidden',k!==tab);
+    });
+    document.querySelectorAll('[data-admin-tab]').forEach(function(b){
+      b.classList.toggle('active',b.getAttribute('data-admin-tab')===tab);
+    });
+  }
+
+  document.querySelectorAll('[data-admin-tab]').forEach(function(b){
+    b.addEventListener('click',function(){
+      showTab(b.getAttribute('data-admin-tab'));
+    });
+  });
+})();
+</script>
+
+
+<script id="procurement-preview-runtime">
+(function(){
+  let activeProcTab='material';
+  let currentProcOrders=[];
+  function nrm(s){return String(s||'').toLowerCase().replace(/\s+/g,'').replace(/[\[\](){}·\-_/]/g,'').replace(/no\.?/g,'');}
+  function itemName(x){return String((x&&x.name)||'')+' '+String((x&&x.variant)||'');}
+  function matches(sheetItem, orderItem){
+    let a=nrm(sheetItem), b=nrm(itemName(orderItem));
+    if(!a||!b)return false;
+    // remove leading codes for easier matching
+    let aa=a.replace(/^w?\d+/,''); let bb=b.replace(/^w?\d+/,'');
+    return (aa.length>=3 && bb.includes(aa)) || (bb.length>=3 && aa.includes(bb)) || a.includes(b) || b.includes(a);
+  }
+  function relevantOrders(){
+    let paid=document.getElementById('procPaidOnly')?.checked;
+    let period=document.getElementById('procPeriod')?.value||'all';
+    let tk=todayKey(), wk=weekStartKey();
+    return orders.filter(o=>{
+      if(!/^ART|^PNT/.test(o.order_no||'')) return false;
+      if((o.order_status||'발주대기')!=='발주대기') return false;
+      if(paid && (o.payment_status||'입금대기')!=='입금완료') return false;
+      let d=localParts(o.created_at);
+      if(period==='today' && d!==tk)return false;
+      if(period==='week' && d<wk)return false;
+      return true;
+    });
+  }
+  function fillSheet(kind){
+    let candidates=currentProcOrders.filter(o=>kind==='material'?/^ART/.test(o.order_no||''):/^PNT/.test(o.order_no||''));
+    document.querySelectorAll('[data-proc-kind="'+kind+'"] .proc-qty').forEach(x=>x.textContent='-');
+    document.querySelectorAll('[data-proc-kind="'+kind+'"]').forEach(cell=>{
+      let sum=0, sheetItem=cell.getAttribute('data-proc-item')||'';
+      candidates.forEach(o=>parseItems(o.items).forEach(it=>{ if(matches(sheetItem,it)) sum+=Number(it.qty||0); }));
+      let el=cell.querySelector('.proc-qty'); if(el)el.textContent=sum?String(sum):'-';
+    });
+  }
+  window.renderProcurement=function(){
+    currentProcOrders=relevantOrders();
+    let art=currentProcOrders.filter(o=>/^ART/.test(o.order_no||''));
+    let pnt=currentProcOrders.filter(o=>/^PNT/.test(o.order_no||''));
+    let students=new Set(currentProcOrders.map(o=>(o.student_name||'')+'|'+(o.phone||'')));
+    document.getElementById('procArtOrders').textContent=art.length+'건';
+    document.getElementById('procPaintOrders').textContent=pnt.length+'건';
+    document.getElementById('procStudents').textContent=students.size+'명';
+    document.getElementById('procAmount').textContent=won(currentProcOrders.reduce((s,o)=>s+Number(o.total_amount||0),0));
+    fillSheet('material'); fillSheet('design'); fillSheet('ani');
+  };
+  document.querySelectorAll('[data-proc-tab]').forEach(b=>b.addEventListener('click',()=>{
+    activeProcTab=b.dataset.procTab;
+    document.querySelectorAll('[data-proc-tab]').forEach(x=>x.classList.toggle('active',x===b));
+    ['material','design','ani'].forEach(k=>document.getElementById('proc'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hidden',k!==activeProcTab));
+  }));
+  document.getElementById('procPeriod')?.addEventListener('change',window.renderProcurement);
+  document.getElementById('procPaidOnly')?.addEventListener('change',window.renderProcurement);
+  document.getElementById('procPrintBtn')?.addEventListener('click',()=>window.print());
+  document.getElementById('procCompleteBtn')?.addEventListener('click',async()=>{
+    window.renderProcurement();
+    if(!currentProcOrders.length){alert('발주완료 처리할 주문이 없습니다.');return;}
+    if(!confirm('현재 발주표에 포함된 '+currentProcOrders.length+'건을 발주완료로 변경할까요?'))return;
+    showLoading(true);
+    try{
+      for(const o of currentProcOrders){await api('/rest/v1/orders?id=eq.'+encodeURIComponent(o.id),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({order_status:'발주완료'})});}
+      await loadOrders(); window.renderProcurement(); alert('발주완료 처리했습니다.');
+    }catch(e){alert('발주완료 처리 실패: '+e.message)} finally{showLoading(false)}
+  });
+  // augment existing loadOrders so procurement refreshes after DB load
+  const oldLoad=window.loadOrders;
+  if(typeof oldLoad==='function'){
+    window.loadOrders=async function(){let r=await oldLoad.apply(this,arguments);setTimeout(()=>window.renderProcurement&&window.renderProcurement(),0);return r;};
+  }
+  // render when procurement tab is clicked
+  document.querySelector('[data-admin-tab="procurement"]')?.addEventListener('click',()=>setTimeout(window.renderProcurement,0));
+})();
+</script>
+
+
+<script id="admin-auto-login-runtime">
+(function(){
+  const SESSION_KEY = "hi5_admin_session_v1";
+
+  function saveSession(){
+    try{
+      if(window.accessToken){
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          access_token: window.accessToken,
+          refresh_token: window.refreshToken || "",
+          saved_at: Date.now()
+        }));
+      }
+    }catch(e){}
+  }
+
+  function clearSession(){
+    try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+  }
+
+  async function restoreSession(){
+    let s=null;
+    try{s=JSON.parse(localStorage.getItem(SESSION_KEY)||"null");}catch(e){}
+    if(!s || !s.access_token) return false;
+
+    // Verify stored token first.
+    try{
+      const r=await fetch(SUPABASE_URL+"/auth/v1/user",{
+        headers:{
+          "apikey":API_KEY,
+          "Authorization":"Bearer "+s.access_token
+        }
+      });
+      if(r.ok){
+        window.accessToken=s.access_token;
+        window.refreshToken=s.refresh_token||"";
+        if(typeof showApp==="function") showApp();
+        if(typeof loadOrders==="function") await loadOrders();
+        return true;
+      }
+    }catch(e){}
+
+    // If expired, refresh using stored refresh token.
+    if(s.refresh_token){
+      try{
+        const r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=refresh_token",{
+          method:"POST",
+          headers:{"apikey":API_KEY,"Content-Type":"application/json"},
+          body:JSON.stringify({refresh_token:s.refresh_token})
+        });
+        const d=await r.json();
+        if(r.ok && d.access_token){
+          window.accessToken=d.access_token;
+          window.refreshToken=d.refresh_token||s.refresh_token;
+          saveSession();
+          if(typeof showApp==="function") showApp();
+          if(typeof loadOrders==="function") await loadOrders();
+          return true;
+        }
+      }catch(e){}
+    }
+
+    clearSession();
+    return false;
+  }
+
+  // Capture successful login tokens whenever login completes.
+  const originalFetch=window.fetch;
+  window.fetch=async function(){
+    const res=await originalFetch.apply(this,arguments);
+    try{
+      const url=String(arguments[0]||"");
+      if(url.indexOf("/auth/v1/token?grant_type=password")>=0 && res.ok){
+        const clone=res.clone();
+        const d=await clone.json();
+        if(d.access_token){
+          window.accessToken=d.access_token;
+          window.refreshToken=d.refresh_token||"";
+          localStorage.setItem(SESSION_KEY,JSON.stringify({
+            access_token:d.access_token,
+            refresh_token:d.refresh_token||"",
+            saved_at:Date.now()
+          }));
+        }
+      }
+    }catch(e){}
+    return res;
+  };
+
+  // Clear saved login only when the user explicitly logs out.
+  document.addEventListener("click",function(e){
+    const b=e.target.closest("#logoutBtn");
+    if(b) clearSession();
+  },true);
+
+  // Restore automatically whenever this file is opened again.
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",function(){setTimeout(restoreSession,30);});
+  }else{
+    setTimeout(restoreSession,30);
+  }
+})();
+</script>
+
+
+<script id="detail-split-order-runtime">
+(function(){
+  function esc2(s){return String(s??'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
+  function money2(n){return Number(n||0).toLocaleString('ko-KR')+'원'}
+  function parseItems2(raw){
+    if(Array.isArray(raw))return raw;
+    try{
+      var x=JSON.parse(raw||'[]');
+      return Array.isArray(x)?x:[];
+    }catch(e){return []}
+  }
+  function kindOfOrder(o){
+    var no=String(o.order_no||'');
+    if(no.indexOf('ART')===0)return 'material';
+    if(no.indexOf('PNT')===0)return 'paint';
+    return 'legacy';
+  }
+  function table2(title, rows, paint){
+    var total=rows.reduce(function(a,r){return a+Number(r.amount||0)},0);
+    return '<div class="detail-order-sheet '+(paint?'paint-capture-sheet':'')+'">'+
+      '<div class="detail-order-sheet-head"><strong>'+title+'</strong><span>'+rows.length+'종</span></div>'+
+      '<table><thead><tr><th class="num">번호</th><th>품목명</th><th>종류</th><th class="num">수량</th><th class="money">금액</th></tr></thead><tbody>'+
+      rows.map(function(r,i){return '<tr><td class="num">'+(i+1)+'</td><td>'+esc2(r.name||'-')+'</td><td>'+esc2(r.variant||'-')+'</td><td class="num">'+Number(r.qty||0)+'</td><td class="money">'+money2(r.amount)+'</td></tr>'}).join('')+
+      '</tbody></table><div class="detail-order-sheet-total"><span>합계</span><span>'+money2(total)+'</span></div>'+
+      (paint?'<div class="detail-capture-note">📸 이 물감재료표 영역만 캡처해서 필통 업체에 전달할 수 있습니다.</div>':'')+
+      '</div>';
+  }
+
+  function findOrderById(id){
+    if(!window.orders)return null;
+    return window.orders.find(function(o){return String(o.id)===String(id)})||null;
+  }
+  function enhance(o){
+    if(!o)return;
+    var modal=document.getElementById('detailModal');
+    if(!modal)return;
+    var body=modal.querySelector('.modal-body')||modal.querySelector('.detail-body')||modal.querySelector('[data-detail-body]');
+    if(!body)return;
+
+    var items=parseItems2(o.items);
+    var kind=kindOfOrder(o);
+    var material=[],paint=[];
+    if(kind==='material')material=items;
+    else if(kind==='paint')paint=items;
+    else{
+      // Legacy combined orders: infer paint from common paint brand/color terms; remaining rows are materials.
+      var paintWords=/패스|미션골드|포스터칼라 A|SWC|홀베인|조색|W\d{3}|컴포우즈|헬리오|세레스트|오커|카민|크림슨|코발트|그린|블루|바이올렛|오페라|시에나|엄버|세피아/i;
+      items.forEach(function(r){(paintWords.test((r.name||'')+' '+(r.variant||''))?paint:material).push(r)});
+    }
+
+    var head='<div><b>주문번호</b> '+esc2(o.order_no||'-')+
+      '　<b>학생</b> '+esc2(o.student_name||'-')+
+      '　<b>반</b> '+esc2(o.major||'-')+' / '+esc2(o.class_name||'-')+'</div>';
+    var sheets='<div class="detail-order-sheets">'+
+      (material.length?table2('미술재료표',material,false):'')+
+      (paint.length?table2('물감재료표',paint,true):'')+
+      '</div>';
+    body.innerHTML=head+sheets;
+  }
+
+  document.addEventListener('click',function(e){
+    var btn=e.target.closest('button');
+    if(!btn)return;
+    var t=(btn.textContent||'').trim();
+    if(t!=='보기' && !btn.matches('[data-detail-id]'))return;
+    var tr=btn.closest('tr');
+    var id=btn.getAttribute('data-detail-id') || (tr && tr.getAttribute('data-id'));
+    setTimeout(function(){
+      var o=findOrderById(id);
+      if(!o && window.orders && tr){
+        var noCell=tr.querySelector('[data-order-no]');
+        var no=noCell && noCell.textContent.trim();
+        if(no)o=window.orders.find(function(x){return String(x.order_no)===no});
+      }
+      if(!o && window.orders && window.orders.length){
+        // Existing detail function may expose selected order id.
+        var modal=document.getElementById('detailModal');
+        var txt=modal?modal.textContent:'';
+        o=window.orders.find(function(x){return txt.indexOf(String(x.order_no||''))>=0})||null;
+      }
+      enhance(o);
+    },20);
+  },true);
+})();
+</script>
+
+
+
+<script id="admin-v8-runtime">
+(function(){
+  const DEFAULT_PRODUCTS=[{"id": "material_M01", "category": "material", "name": "포스터칼라 화이트(250ml) - 신한", "group": "미술재료", "sale_price": 12000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M02", "category": "material", "name": "전문가용 튜브형 블랙(100ml) - 신한", "group": "미술재료", "sale_price": 9000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M03", "category": "material", "name": "매트화이트(100ml) - 미션", "group": "미술재료", "sale_price": 11000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M04", "category": "material", "name": "아이스트레이", "group": "미술재료", "sale_price": 6000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M05", "category": "material", "name": "아크릴판", "group": "미술재료", "sale_price": 1300, "supply_price": 0, "active": true, "options": []}, {"id": "material_M06", "category": "material", "name": "4절", "group": "미술재료", "sale_price": 22000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M07", "category": "material", "name": "3절", "group": "미술재료", "sale_price": 33000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M08", "category": "material", "name": "프리즈마 유성색연필 72색", "group": "미술재료", "sale_price": 120000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M09", "category": "material", "name": "프리즈마 유성색연필 132색", "group": "미술재료", "sale_price": 218000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M10", "category": "material", "name": "스테들러 연필", "group": "미술재료", "sale_price": 14000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M11", "category": "material", "name": "톰보우 연필", "group": "미술재료", "sale_price": 12000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M12", "category": "material", "name": "ELM 전동연필깎이 V-3", "group": "미술재료", "sale_price": 18000, "supply_price": 0, "active": true, "options": []}, {"id": "material_artliner", "category": "material", "name": "아트라이너", "group": "미술재료", "sale_price": 3000, "supply_price": 0, "active": true, "options": ["0.05mm", "0.1mm", "0.2mm", "0.3mm", "0.4mm", "0.5mm", "0.6mm", "0.7mm", "0.8mm"]}, {"id": "material_M14", "category": "material", "name": "펜텔 브러쉬 펜", "group": "미술재료", "sale_price": 14000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M15", "category": "material", "name": "펜텔 포켓브러쉬펜 리필심", "group": "미술재료", "sale_price": 5500, "supply_price": 0, "active": true, "options": []}, {"id": "material_M16", "category": "material", "name": "마카 그레이 세트", "group": "미술재료", "sale_price": 38000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M17", "category": "material", "name": "화홍지우개(분홍색)", "group": "미술재료", "sale_price": 3000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M18", "category": "material", "name": "화홍 구성붓 972-3호", "group": "미술재료", "sale_price": 3000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M19", "category": "material", "name": "화홍 구성붓 972-4호", "group": "미술재료", "sale_price": 3600, "supply_price": 0, "active": true, "options": []}, {"id": "material_M20", "category": "material", "name": "화홍 구성붓 972-5호", "group": "미술재료", "sale_price": 4200, "supply_price": 0, "active": true, "options": []}, {"id": "material_M21", "category": "material", "name": "화홍 구성붓 972-6호", "group": "미술재료", "sale_price": 5000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M22", "category": "material", "name": "화홍 구성붓 972-7호", "group": "미술재료", "sale_price": 6000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M23", "category": "material", "name": "화홍 구성붓 972-8호", "group": "미술재료", "sale_price": 7500, "supply_price": 0, "active": true, "options": []}, {"id": "material_M24", "category": "material", "name": "화홍 세필붓 320-4호", "group": "미술재료", "sale_price": 2500, "supply_price": 0, "active": true, "options": []}, {"id": "material_M25", "category": "material", "name": "바바라 80R-8호", "group": "미술재료", "sale_price": 6000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M26", "category": "material", "name": "바바라 300R-8호", "group": "미술재료", "sale_price": 11000, "supply_price": 0, "active": true, "options": []}, {"id": "material_M27", "category": "material", "name": "바바라 300R-12호", "group": "미술재료", "sale_price": 13000, "supply_price": 0, "active": true, "options": []}, {"id": "design_패스_A", "category": "design", "name": "패스 A", "group": "패스 A", "sale_price": 3400, "supply_price": 0, "active": true, "options": ["841 컴포우즈블루", "858 헬리오", "859 블루세레스트", "878 옐로오커", "882 라이트레드", "893 세피아"]}, {"id": "design_패스_B", "category": "design", "name": "패스 B", "group": "패스 B", "sale_price": 3700, "supply_price": 0, "active": true, "options": ["802 알리자린크림슨", "804 카민", "811 오렌지", "813 옐로우오렌지", "815 퍼머넌트옐로딥", "816 퍼머넌트옐로", "817 레몬옐로", "819 쟌브릴리언트", "821 린덴그린", "830 후커스그린", "844 피코블루", "845 세루리안블루휴", "847 코발트블루휴", "853 인디고", "865 오페라", "870 핑크", "885 번트시에나", "890 번트엄버", "892 반다이크브라운", "849 울트라 마린딥"]}, {"id": "design_패스_C", "category": "design", "name": "패스 C", "group": "패스 C", "sale_price": 4600, "supply_price": 0, "active": true, "options": ["829 샙그린", "861 레드바이올렛", "887 브라운레드"]}, {"id": "design_패스_D", "category": "design", "name": "패스 D", "group": "패스 D", "sale_price": 5800, "supply_price": 0, "active": true, "options": ["834 섀도그린"]}, {"id": "design_패스_E", "category": "design", "name": "패스 E", "group": "패스 E", "sale_price": 9000, "supply_price": 0, "active": true, "options": ["827 코발트그린"]}, {"id": "design_A_포스터칼라_A", "category": "design", "name": "A+ 포스터칼라 A", "group": "A+ 포스터칼라 A", "sale_price": 2800, "supply_price": 0, "active": true, "options": ["18 퍼머넌트오렌지", "24 마젠타", "28 퍼피레드", "33 프러시안블루", "34 퍼머넌트모브", "37 라이크그린", "40 비리디언", "41 미들그린", "61 초콜릿", "70 네이플즈옐로우", "83 터키그린", "84 마린블루"]}, {"id": "design_미션골드_A", "category": "design", "name": "미션골드 A", "group": "미션골드 A", "sale_price": 4000, "supply_price": 0, "active": true, "options": ["W504 데이비스그레이", "W569 로시에나", "W593 멜론그린"]}, {"id": "design_미션골드_B", "category": "design", "name": "미션골드 B", "group": "미션골드 B", "sale_price": 4500, "supply_price": 0, "active": true, "options": ["W538 터쿼이즈블루", "W539 프러시안그린", "W579 호라이즌블루", "W585 퍼머먼트크린", "W587 리프그린"]}, {"id": "design_미션골드_C", "category": "design", "name": "미션골드 C", "group": "미션골드 C", "sale_price": 5500, "supply_price": 0, "active": true, "options": ["W531 그리니쉬옐로우NO.1", "W536 비리디언"]}, {"id": "design_미션골드_D", "category": "design", "name": "미션골드 D", "group": "미션골드 D", "sale_price": 7000, "supply_price": 0, "active": true, "options": ["W609 그리니쉬블루"]}, {"id": "design_미션골드_E", "category": "design", "name": "미션골드 E", "group": "미션골드 E", "sale_price": 9000, "supply_price": 0, "active": true, "options": ["W590 코발트터쿼이즈휴", "W611 바이올렛레이크"]}, {"id": "design_SWC_B", "category": "design", "name": "SWC B", "group": "SWC B", "sale_price": 3500, "supply_price": 0, "active": true, "options": ["987 페인즈그레이"]}, {"id": "design_홀베인_A", "category": "design", "name": "홀베인 A", "group": "홀베인 A", "sale_price": 6200, "supply_price": 0, "active": true, "options": ["W337 피치블랙", "W338 아이보리블랙", "W353 그레이오브그레이"]}, {"id": "design_조색_A", "category": "design", "name": "조색 A", "group": "조색 A", "sale_price": 3300, "supply_price": 0, "active": true, "options": ["1 핑키오렌지NO.1", "6 하이옐로우", "8 엔티크레몬NO.1", "12 그레이오우커NO.1", "17 핑키오페라NO.1", "24 그레이바이올렛NO.1", "29 그레이프러시안NO.1", "31 그레이프러시안NO.4"]}, {"id": "ani_조색_A", "category": "ani", "name": "조색 A", "group": "조색 A", "sale_price": 3500, "supply_price": 0, "active": true, "options": ["1 옐로우 딥", "2 옐로우 오렌지", "3 오렌지", "4 퍼피 레드", "5 크림슨 레이크", "6 버밀리온(휴)", "7 핑키오렌지 no.3", "8 레드 핑크", "9 헬리오트로프", "10 레드 바이올렛", "11 퍼머넌트 모브", "12 옐로우 오커", "13 번트시에나", "14 라이트레드", "15 번트엄버", "16 초콜렛", "17 세피아", "18 코랄레드", "19 린덴그린", "20 그리니쉬 옐로우", "21 올리브 그린", "22 샙그린", "23 후커스 그린", "26 세루리안 블루", "27 피코크블루", "28 워터블루", "30 프러시안블루", "31 인디고", "32 코발트 그린", "33 뉴트럴 틴트", "34 핑키 모브", "35 마린오커", "38 시에나 모브", "39 마린핑크"]}, {"id": "ani_조색_B", "category": "ani", "name": "조색 B", "group": "조색 B", "sale_price": 4500, "supply_price": 0, "active": true, "options": ["25 미들그린", "29 울트라마린", "36 울트라그린", "40 미들블루"]}, {"id": "ani_조색_C", "category": "ani", "name": "조색 C", "group": "조색 C", "sale_price": 11000, "supply_price": 0, "active": true, "options": ["24 섀도우 그린", "37 페인즈 그레이"]}];
+  const PRODUCT_KEY='hi5_product_master_v1';
+  let productTab='material';
+  let settlementTab='material';
+  let costCat='material';
+
+  function loadProducts(){
+    try{return JSON.parse(localStorage.getItem(PRODUCT_KEY)||'null')||DEFAULT_PRODUCTS}
+    catch(e){return DEFAULT_PRODUCTS}
+  }
+  let master=loadProducts();
+
+  // v37: Supabase 연동용으로 실제 품목관리 상태를 안전하게 노출
+  window.__hi5Products={
+    getMaster:function(){ return master; },
+    setMaster:function(rows){
+      master=Array.isArray(rows)?rows:[];
+      return master;
+    },
+    renderProducts:function(){ return renderProducts(); },
+    renderSettlement:function(){ return renderSettlementSheets(); }
+  };
+
+  function saveMaster(messageEl){
+    localStorage.setItem(PRODUCT_KEY,JSON.stringify(master));
+    if(messageEl){
+      messageEl.textContent='저장됨 · '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    }
+    renderProducts();
+    renderCostList();
+    renderSettlementSheets();
+  }
+
+  function catLabel(c){return c==='material'?'미술재료':c==='design'?'디자인 물감':'애니 물감'}
+
+  function renderProducts(){
+    const list=document.getElementById('productManageList'); if(!list)return;
+    const arr=master.filter(p=>p.category===productTab);
+    list.innerHTML=arr.map((p,idx)=>`<div class="product-manage-row product-main-row-v30" data-pid="${p.id}">
+      <div class="product-no-v30">${idx+1}</div>
+      <input data-f="name" value="${esc(p.name)}" aria-label="품목명">
+      <input data-f="group" value="${esc(p.group||'')}" aria-label="그룹명">
+      <input class="sale" type="text" inputmode="numeric" data-f="sale_price" value="${Number(p.sale_price||0).toLocaleString('ko-KR')}" aria-label="판매가">
+      <input class="supply" type="text" inputmode="numeric" data-f="supply_price" value="${Number(p.supply_price||0).toLocaleString('ko-KR')}" aria-label="공급가">
+      <label class="toggle"><input type="checkbox" data-f="active" ${p.active!==false?'checked':''}> 판매중</label>
+      <button class="remove" data-remove="${p.id}">삭제</button>
+      ${p.category!=='material'?`<div class="product-options-editor-v30">
+        <div class="option-editor-head-v30">
+          <div><b>옵션 개별 수정</b><span>${(p.options||[]).length}개</span></div>
+          <button type="button" data-option-add="${p.id}">+ 옵션 추가</button>
+        </div>
+        <div class="option-list-v30">
+          ${(p.options||[]).map((op,oi)=>`<div class="option-row-v30" data-option-pid="${p.id}" data-option-index="${oi}">
+            <span class="option-no-v30">${oi+1}</span>
+            <input class="option-name-v30" type="text" value="${esc(String(op||''))}" aria-label="옵션명">
+            <button type="button" class="option-up-v30" title="위로">↑</button>
+            <button type="button" class="option-down-v30" title="아래로">↓</button>
+            <button type="button" class="option-delete-v30">삭제</button>
+          </div>`).join('')}
+        </div>
+      </div>`:''}
+    </div>`).join('');
+
+    list.querySelectorAll('input[data-f]').forEach(el=>el.addEventListener('change',function(){
+      const row=el.closest('[data-pid]');
+      const p=master.find(x=>x.id===row.dataset.pid); if(!p)return;
+      const f=el.dataset.f;
+      if(f==='active')p[f]=el.checked;
+      else if(f.includes('price')){
+        p[f]=Number(String(el.value||'').replace(/[^0-9]/g,'')||0);
+        el.value=Number(p[f]||0).toLocaleString('ko-KR');
+      }else p[f]=el.value;
+    }));
+    list.querySelectorAll('[data-remove]').forEach(b=>b.onclick=function(){
+      if(confirm('이 품목을 목록에서 제거할까요?')){
+        master=master.filter(x=>x.id!==b.dataset.remove);
+        saveMaster(document.getElementById('productSaveMsg'));
+      }
+    });
+    list.querySelectorAll('.option-name-v30').forEach(inp=>inp.addEventListener('change',function(){
+      const r=inp.closest('[data-option-pid]');
+      const p=master.find(x=>x.id===r.dataset.optionPid); if(!p)return;
+      const oi=Number(r.dataset.optionIndex);
+      if(!Array.isArray(p.options))p.options=[];
+      p.options[oi]=inp.value.trim();
+    }));
+    list.querySelectorAll('[data-option-add]').forEach(b=>b.onclick=function(){
+      const p=master.find(x=>x.id===b.dataset.optionAdd); if(!p)return;
+      if(!Array.isArray(p.options))p.options=[];
+      p.options.push('새 옵션'); renderProducts();
+    });
+    list.querySelectorAll('.option-delete-v30').forEach(b=>b.onclick=function(){
+      const r=b.closest('[data-option-pid]');
+      const p=master.find(x=>x.id===r.dataset.optionPid); if(!p)return;
+      const oi=Number(r.dataset.optionIndex);
+      if(confirm('이 옵션을 삭제할까요?')){p.options.splice(oi,1);renderProducts();}
+    });
+    list.querySelectorAll('.option-up-v30').forEach(b=>b.onclick=function(){
+      const r=b.closest('[data-option-pid]'); const p=master.find(x=>x.id===r.dataset.optionPid); if(!p)return;
+      const oi=Number(r.dataset.optionIndex); if(oi<=0)return;
+      [p.options[oi-1],p.options[oi]]=[p.options[oi],p.options[oi-1]];renderProducts();
+    });
+    list.querySelectorAll('.option-down-v30').forEach(b=>b.onclick=function(){
+      const r=b.closest('[data-option-pid]'); const p=master.find(x=>x.id===r.dataset.optionPid); if(!p)return;
+      const oi=Number(r.dataset.optionIndex); if(oi>=p.options.length-1)return;
+      [p.options[oi+1],p.options[oi]]=[p.options[oi],p.options[oi+1]];renderProducts();
+    });
+  }
+
+  document.querySelectorAll('[data-product-tab]').forEach(b=>b.onclick=function(){
+    productTab=b.dataset.productTab;
+    document.querySelectorAll('[data-product-tab]').forEach(x=>x.classList.toggle('active',x===b));
+    renderProducts();
+  });
+  const sp=document.getElementById('saveProductsBtn');
+  if(sp)sp.onclick=()=>saveMaster(document.getElementById('productSaveMsg'));
+
+  const ap=document.getElementById('addProductBtn');
+  if(ap)ap.onclick=function(){
+    const name=prompt('새 품목명을 입력해 주세요.');
+    if(!name)return;
+    master.push({
+      id:productTab+'_'+Date.now(),category:productTab,name:name,group:catLabel(productTab),
+      sale_price:0,supply_price:0,active:true,options:[]
+    });
+    saveMaster(document.getElementById('productSaveMsg'));
+  };
+
+  function parseItemsV8(raw){
+    try{const x=typeof raw==='string'?JSON.parse(raw):raw;return Array.isArray(x)?x:[]}
+    catch(e){return []}
+  }
+
+  function orderCategory(o){
+    const no=String(o.order_no||'');
+    if(no.startsWith('ART'))return 'material';
+    if(no.startsWith('PNT'))return String(o.major||'').includes('애니')?'ani':'design';
+    return 'material';
+  }
+
+  function matchProduct(o,item){
+    const cat=orderCategory(o);
+    const candidates=master.filter(p=>p.category===cat);
+    const n=String(item.name||'');
+    const v=String(item.variant||'');
+    let exact=candidates.find(p=>p.name===n);
+    if(exact)return exact;
+    let byGroup=candidates.find(p=>n.includes(p.name)||v.includes(p.name)||p.name.includes(n));
+    if(byGroup)return byGroup;
+
+    // 물감 그룹 주문에서 품목명 자체가 색상명인 경우 options 안에서 찾기
+    let byOption=candidates.find(p=>(p.options||[]).some(opt=>n.includes(opt)||opt.includes(n)||v.includes(opt)));
+    return byOption||null;
+  }
+
+  function allSettlementRows(){
+    const rows=[];
+    (window.orders||orders||[]).forEach(o=>{
+      parseItemsV8(o.items).forEach((it,itemIndex)=>{
+        const p=matchProduct(o,it);
+        const qty=Number(it.qty||0);
+        const sale=Number(it.amount||0);
+        const supplyUnit=p?Number(p.supply_price||0):0;
+        rows.push({
+          o,it,p,qty,sale,supply:supplyUnit*qty,itemIndex,
+          family:String(o.order_no||'').startsWith('PNT')?'paint':'material',
+          category:orderCategory(o)
+        });
+      });
+    });
+    return rows;
+  }
+
+
+  function setSettlementDateRangeFromMonth(){
+    const monthInput=document.getElementById('settlementMonth');
+    const startInput=document.getElementById('settlementStartDate');
+    const endInput=document.getElementById('settlementEndDate');
+    if(!monthInput||!monthInput.value||!startInput||!endInput)return;
+
+    const [y,m]=monthInput.value.split('-').map(Number);
+    const lastDay=new Date(y,m,0).getDate();
+
+    // 기본은 해당 월 전체로 세팅
+    startInput.value=monthInput.value+'-01';
+    endInput.value=monthInput.value+'-'+String(lastDay).padStart(2,'0');
+  }
+
+  function selectedMonth(){
+    const input=document.getElementById('settlementMonth');
+    if(input && !input.value){
+      const d=new Date();
+      input.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    }
+    return input?input.value:'';
+  }
+
+  function monthRows(family){
+    const month=selectedMonth();
+    const start=document.getElementById('settlementStartDate')?.value||'';
+    const end=document.getElementById('settlementEndDate')?.value||'';
+
+    return allSettlementRows().filter(r=>{
+      const d=typeof localParts==='function'?localParts(r.o.created_at):'';
+      if(r.family!==family) return false;
+
+      // 일자 범위가 있으면 일자 범위를 우선 사용
+      if(start && d<start) return false;
+      if(end && d>end) return false;
+
+      // 일자 범위가 비어 있을 때만 정산월 기준
+      if(!start && !end && month && !d.startsWith(month)) return false;
+
+      return true;
+    });
+  }
+
+  const SETTLEMENT_LOCAL_KEY='hi5_settlement_item_status_v15';
+  function loadSettlementMap(){ try{return JSON.parse(localStorage.getItem(SETTLEMENT_LOCAL_KEY)||'{}')}catch(e){return {}} }
+  let settlementMap=loadSettlementMap();
+  function saveSettlementMap(){ localStorage.setItem(SETTLEMENT_LOCAL_KEY,JSON.stringify(settlementMap)); }
+  function settlementRowKey(r){ return String(r.o.id||r.o.order_no)+'|'+String(r.itemIndex||0)+'|'+String(r.it.name||'')+'|'+String(r.it.variant||''); }
+  function settlementMeta(r){ return settlementMap[settlementRowKey(r)]||{status:'미정산',settled_at:''}; }
+  function setSettlementMeta(r,status){
+    const key=settlementRowKey(r);
+    settlementMap[key]={status:status,settled_at:status==='정산완료'?new Date().toISOString():''};
+    saveSettlementMap();
+  }
+  function setSettlementMetaByKey(key,status){
+    if(!key)return;
+    settlementMap[key]={status:status,settled_at:status==='정산완료'?new Date().toISOString():''};
+    saveSettlementMap();
+  }
+  function settlementTime(v){ if(!v)return '-'; const d=new Date(v); return isNaN(d)?'-':d.toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+
+  function renderSheet(family){
+    let rows=monthRows(family);
+    const prefix=family==='material'?'material':'paint';
+    const stateFilter=String(document.getElementById(prefix+'SettlementFilter')?.value||'all').trim();
+    if(stateFilter==='미정산' || stateFilter==='정산완료'){
+      rows=rows.filter(r=>settlementMeta(r).status===stateFilter);
+    }
+
+    const sales=rows.reduce((a,r)=>a+r.sale,0);
+    const supply=rows.reduce((a,r)=>a+r.supply,0);
+    const missing=new Set(rows.filter(r=>!r.p||!Number(r.p.supply_price||0)).map(r=>r.it.name)).size;
+
+    document.getElementById(prefix+'Sales').textContent=won(sales);
+    document.getElementById(prefix+'Supply').textContent=won(supply);
+    document.getElementById(prefix+'Margin').textContent=won(sales-supply);
+    document.getElementById(prefix+'Missing').textContent=missing+'종';
+    document.getElementById(prefix+'SettlementCount').textContent=rows.length+'건';
+
+    const body=document.getElementById(prefix+'SettlementBody');
+    const empty=document.getElementById(prefix+'SettlementEmpty');
+    empty.classList.toggle('hidden',rows.length>0);
+
+    body.innerHTML=rows.map((r,i)=>{
+      const meta=settlementMeta(r);
+      const settled=meta.status==='정산완료';
+      return `<tr class="${settled?'is-settled':'is-unsettled'}" data-settle-family="${family}" data-settle-key="${esc(settlementRowKey(r))}">
+        <td class="settle-check-col"><input type="checkbox" class="settlement-row-check" data-settle-check></td>
+        <td class="no-col">${i+1}</td>
+        <td>${seoulDate(r.o.created_at)}</td>
+        <td>${esc(r.o.student_name||'')}</td>
+        ${family==='paint'?`<td><span class="category-chip">${r.category==='ani'?'애니 물감':'디자인 물감'}</span></td>`:''}
+        <td>${esc(r.it.name||'')}${r.it.variant&&r.it.variant!=='-'?' · '+esc(r.it.variant):''}</td>
+        <td>${r.qty}</td>
+        <td class="money">${won(r.sale)}</td>
+        <td class="${r.supply?'cost-ok':'cost-missing'}">${r.supply?won(r.supply):'미입력'}</td>
+        <td class="money">${won(r.sale-r.supply)}</td>
+        <td><select class="settlement-state-select" data-live-settle-state><option value="미정산" ${!settled?'selected':''}>미정산</option><option value="정산완료" ${settled?'selected':''}>정산완료</option></select></td>
+        <td class="settled-at-text">${settlementTime(meta.settled_at)}</td>
+      </tr>`;
+    }).join('');
+
+    const masterCheck=document.querySelector(`[data-master-check="${family}"]`);
+    if(masterCheck){masterCheck.checked=false;masterCheck.indeterminate=false;}
+  }
+
+  function renderSettlementSheets(){
+    renderSheet('material');
+    renderSheet('paint');
+  }
+
+  function renderCostList(){
+    const list=document.getElementById('settlementCostList');
+    if(!list)return;
+    let arr;
+    if(costCat==='material')arr=master.filter(p=>p.category==='material');
+    else arr=master.filter(p=>p.category==='design'||p.category==='ani');
+
+    list.innerHTML=arr.map(p=>`<div class="cost-row" data-cost-id="${p.id}">
+      <div class="cost-name-wrap">
+        <div class="cost-name">${esc(p.name)}</div>
+        <div class="cost-group">${catLabel(p.category)} · ${esc(p.group||'')}</div>
+      </div>
+      <div>
+        <label>판매가</label>
+        <div class="cost-sale-value">${won(p.sale_price)}</div>
+      </div>
+      <div>
+        <label>공급가</label>
+        <input type="text" inputmode="numeric" data-cost-input value="${Number(p.supply_price||0).toLocaleString('ko-KR')}">
+      </div>
+      <div>
+        ${Number(p.supply_price||0)>0?'<span class="badge ok">입력완료</span>':'<span class="cost-missing-mark">공급가 미입력</span>'}
+      </div>
+    </div>`).join('');
+
+    list.querySelectorAll('[data-cost-input]').forEach(inp=>{
+      function normalize(){
+        const row=inp.closest('[data-cost-id]');
+        const p=master.find(x=>x.id===row.dataset.costId);
+        const raw=String(inp.value||'').replace(/[^0-9]/g,'');
+        const num=Number(raw||0);
+        if(p)p.supply_price=num;
+        inp.value=num ? num.toLocaleString('ko-KR') : '';
+      }
+      inp.addEventListener('input',function(){
+        const pos=inp.selectionStart;
+        normalize();
+        try{inp.setSelectionRange(inp.value.length,inp.value.length)}catch(e){}
+      });
+      inp.addEventListener('blur',normalize);
+    });
+  }
+
+  document.querySelectorAll('[data-settlement-tab]').forEach(btn=>btn.addEventListener('click',function(){
+    settlementTab=btn.dataset.settlementTab;
+    document.querySelectorAll('[data-settlement-tab]').forEach(x=>x.classList.toggle('active',x===btn));
+    document.getElementById('settlementMaterialSheet').classList.toggle('hidden',settlementTab!=='material');
+    document.getElementById('settlementPaintSheet').classList.toggle('hidden',settlementTab!=='paint');
+    
+    renderSettlementSheets();
+  }));
+
+  document.querySelectorAll('[data-cost-cat]').forEach(btn=>btn.addEventListener('click',function(){
+    costCat=btn.dataset.costCat;
+    document.querySelectorAll('[data-cost-cat]').forEach(x=>x.classList.toggle('active',x===btn));
+    renderCostList();
+  }));
+
+  const saveCost=document.getElementById('saveSettlementCosts');
+  if(saveCost)saveCost.onclick=function(){
+    saveMaster(document.getElementById('settlementCostMsg'));
+  };
+
+  document.getElementById('settlementMonth')?.addEventListener('change',function(){
+    setSettlementDateRangeFromMonth();
+    renderSettlementSheets();
+  });
+  document.getElementById('settlementStartDate')?.addEventListener('change',renderSettlementSheets);
+  document.getElementById('settlementEndDate')?.addEventListener('change',renderSettlementSheets);
+  document.getElementById('materialSettlementFilter')?.addEventListener('change',function(){
+    renderSheet('material');
+  });
+  document.getElementById('paintSettlementFilter')?.addEventListener('change',function(){
+    renderSheet('paint');
+  });
+
+  // 정산관리 상태/선택/필터는 이 블록 하나에서만 처리합니다.
+  function settlementVisibleRows(family){
+    return Array.from(document.querySelectorAll('tr[data-settle-family="'+family+'"]'));
+  }
+  function settlementCheckedRows(family){
+    return settlementVisibleRows(family).filter(tr=>tr.querySelector('[data-settle-check]')?.checked);
+  }
+
+  document.addEventListener('click',function(e){
+    const bulk=e.target.closest('[data-settle-bulk]');
+    if(bulk){
+      e.preventDefault();
+      const family=bulk.dataset.settleBulk;
+      const status=bulk.dataset.state;
+      const selected=settlementCheckedRows(family);
+      if(!selected.length){ alert('정산상태를 변경할 항목을 먼저 선택해 주세요.'); return; }
+      selected.forEach(tr=>setSettlementMetaByKey(tr.dataset.settleKey,status));
+      renderSheet(family);
+      return;
+    }
+
+    const allBtn=e.target.closest('[data-settle-all]');
+    if(allBtn){
+      e.preventDefault();
+      const family=allBtn.dataset.settleAll;
+      const rows=settlementVisibleRows(family);
+      const shouldCheck=rows.some(tr=>!tr.querySelector('[data-settle-check]')?.checked);
+      rows.forEach(tr=>{ const cb=tr.querySelector('[data-settle-check]'); if(cb)cb.checked=shouldCheck; });
+      const master=document.querySelector('[data-master-check="'+family+'"]');
+      if(master)master.checked=shouldCheck;
+    }
+  });
+
+  document.addEventListener('change',function(e){
+    if(e.target.matches('[data-master-check]')){
+      const family=e.target.dataset.masterCheck;
+      settlementVisibleRows(family).forEach(tr=>{
+        const cb=tr.querySelector('[data-settle-check]');
+        if(cb)cb.checked=e.target.checked;
+      });
+      return;
+    }
+    if(e.target.matches('[data-live-settle-state]')){
+      const tr=e.target.closest('tr[data-settle-key]');
+      if(!tr)return;
+      setSettlementMetaByKey(tr.dataset.settleKey,e.target.value);
+      renderSheet(tr.dataset.settleFamily);
+    }
+  });
+
+
+  // 기존 관리자 탭 전환 시 정산/품목 화면 렌더
+  document.addEventListener('click',function(e){
+    if(e.target.closest('[data-admin-tab="products"]'))setTimeout(renderProducts,0);
+    if(e.target.closest('[data-admin-tab="settlement"]'))setTimeout(function(){
+      selectedMonth();
+      if(!document.getElementById('settlementStartDate')?.value && !document.getElementById('settlementEndDate')?.value){
+        setSettlementDateRangeFromMonth();
+      }
+      renderSettlementSheets();
+      renderCostList();
+    },0);
+  });
+
+  // 주문 새로고침 후 정산도 다시 계산
+  const oldLoad=window.loadOrders;
+  if(typeof oldLoad==='function')window.loadOrders=async function(){
+    const r=await oldLoad.apply(this,arguments);
+    renderSettlementSheets();
+    return r;
+  };
+
+  renderProducts();
+  selectedMonth();
+  setSettlementDateRangeFromMonth();
+  setTimeout(function(){
+    renderSettlementSheets();
+    renderCostList();
+  },100);
+})();
+</script>
+
+
+
+<script id="admin-v9-runtime">
+(function(){
+  function commaInput(el){
+    var raw=String(el.value||'').replace(/[^0-9]/g,'');
+    var n=Number(raw||0);
+    el.value=n ? n.toLocaleString('ko-KR') : '';
+  }
+
+  document.addEventListener('input',function(e){
+    if(e.target.matches('input[data-f="supply_price"], input[data-f="sale_price"]')){
+      commaInput(e.target);
+      try{e.target.setSelectionRange(e.target.value.length,e.target.value.length)}catch(err){}
+    }
+  },true);
+
+  document.addEventListener('blur',function(e){
+    if(e.target.matches('input[data-f="supply_price"], input[data-f="sale_price"], input[data-cost-input]')){
+      commaInput(e.target);
+    }
+  },true);
+
+  // 주문관리 표가 다시 렌더될 때도 PNT 행에 파란색 유지
+  function markPaintRows(){
+    document.querySelectorAll('#tbody tr').forEach(function(tr){
+      var txt=tr.textContent||'';
+      if(txt.indexOf('PNT')>=0) tr.classList.add('paint-order-row');
+      else tr.classList.remove('paint-order-row');
+    });
+  }
+
+  var tbody=document.getElementById('tbody');
+  if(tbody && window.MutationObserver){
+    new MutationObserver(markPaintRows).observe(tbody,{childList:true,subtree:true});
+    markPaintRows();
+  }
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\n\n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script id="admin-v30-runtime">
+(function(){
+  function paymentSelect(tr){return tr&&tr.querySelector('select.status-select[data-field="payment_status"],select[data-field="payment_status"]')}
+  function paintPaymentRow(tr){const s=paymentSelect(tr);if(s)tr.classList.toggle('payment-waiting-row',String(s.value||'').trim()==='입금대기')}
+  function paintAllPaymentRows(){document.querySelectorAll('#tbody tr').forEach(paintPaymentRow)}
+  document.addEventListener('change',function(e){if(e.target.matches('select.status-select[data-field="payment_status"],select[data-field="payment_status"]'))paintPaymentRow(e.target.closest('tr'))},true);
+  document.addEventListener('click',function(e){if(e.target.closest('#bulkPaymentApply'))setTimeout(paintAllPaymentRows,80)},true);
+  const orderBody=document.getElementById('tbody');if(orderBody)new MutationObserver(()=>setTimeout(paintAllPaymentRows,0)).observe(orderBody,{childList:true,subtree:true});
+  setTimeout(paintAllPaymentRows,80);
+
+  function categoryLabel(c){return c==='material'?'미술재료':c==='design'?'디자인 물감':'애니 물감'}
+  function categoryValue(v){v=String(v||'').trim();if(v==='디자인 물감'||v==='디자인물감'||v==='design')return'design';if(v==='애니 물감'||v==='애니물감'||v==='ani')return'ani';return'material'}
+  const imp=document.getElementById('productExcelImportBtn'),exp=document.getElementById('productExcelExportBtn'),file=document.getElementById('productExcelFileInput');
+  if(exp)exp.onclick=function(){
+    if(typeof XLSX==='undefined'){alert('엑셀 기능을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.');return;}
+    const rows=master.map((p,i)=>({'No.':i+1,'품목코드':p.id,'구분':categoryLabel(p.category),'품목명':p.name||'','그룹명':p.group||'','판매가':Number(p.sale_price||0),'공급가':Number(p.supply_price||0),'판매여부':p.active===false?'숨김':'판매중','옵션':Array.isArray(p.options)?p.options.join(' | '):''}));
+    const ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:6},{wch:24},{wch:14},{wch:34},{wch:20},{wch:12},{wch:12},{wch:12},{wch:90}];
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'품목관리');XLSX.writeFile(wb,'HI5_품목관리_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  };
+  if(imp&&file){imp.onclick=()=>file.click();file.onchange=async function(){
+    const f=this.files&&this.files[0];if(!f)return;if(typeof XLSX==='undefined'){alert('엑셀 기능을 불러오지 못했습니다.');this.value='';return;}
+    try{
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      const next=master.map(x=>({...x,options:Array.isArray(x.options)?[...x.options]:[]}));let added=0,updated=0;
+      rows.forEach((r,ri)=>{const id=String(r['품목코드']||'').trim(),name=String(r['품목명']||'').trim();if(!id&&!name)return;let p=id?next.find(x=>String(x.id)===id):null;
+        if(!p){p={id:id||('product_'+Date.now()+'_'+ri),category:categoryValue(r['구분']),name:name||'새 품목',group:String(r['그룹명']||'').trim(),sale_price:0,supply_price:0,active:true,options:[]};next.push(p);added++;}else updated++;
+        p.category=categoryValue(r['구분']||p.category);if(name)p.name=name;p.group=String(r['그룹명']||p.group||'').trim();p.sale_price=Number(String(r['판매가']||0).replace(/[^0-9.-]/g,''))||0;p.supply_price=Number(String(r['공급가']||0).replace(/[^0-9.-]/g,''))||0;p.active=String(r['판매여부']||'판매중').trim()!=='숨김';
+        const opts=String(r['옵션']||'').trim();if(opts)p.options=opts.split('|').map(s=>s.trim()).filter(Boolean);else if(p.category==='material')p.options=[];
+      });
+      if(confirm('엑셀 반영 내용\n추가 '+added+'개 / 수정 '+updated+'개\n\n품목관리에 적용할까요?')){master=next;saveMaster(document.getElementById('productSaveMsg'));renderProducts();}
+    }catch(err){alert('엑셀 파일을 읽는 중 오류가 발생했습니다: '+err.message)}finally{this.value='';}
+  }}
+
+  function selectedSettlementRows(family){const body=document.getElementById(family==='material'?'materialSettlementBody':'paintSettlementBody');if(!body)return[];return Array.from(body.querySelectorAll('tr')).filter(tr=>{const cb=tr.querySelector('input[type="checkbox"]');return cb&&cb.checked&&tr.style.display!=='none'})}
+  function periodText(){const s=document.getElementById('settlementStartDate')?.value||'',e=document.getElementById('settlementEndDate')?.value||'';return s&&e?s+' ~ '+e:(document.getElementById('settlementMonth')?.value||'')}
+  function rowData(family,tr,i){const td=Array.from(tr.querySelectorAll('td'));const paint=family==='paint';return paint?{no:i+1,date:td[2]?.textContent.trim(),student:td[3]?.textContent.trim(),category:td[4]?.textContent.trim(),item:td[5]?.textContent.trim(),qty:td[6]?.textContent.trim(),supply:td[8]?.textContent.trim(),status:td[10]?.textContent.trim(),settled:td[11]?.textContent.trim()}:{no:i+1,date:td[2]?.textContent.trim(),student:td[3]?.textContent.trim(),item:td[4]?.textContent.trim(),qty:td[5]?.textContent.trim(),supply:td[7]?.textContent.trim(),status:td[9]?.textContent.trim(),settled:td[10]?.textContent.trim()}}
+  function wonNumber(v){const n=String(v||'').replace(/[^0-9-]/g,'');return n?Number(n):0}
+  function familyLabel(f){return f==='paint'?'물감재료':'미술재료'}
+  function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},100)}
+  function exportSettlementExcel(family,rows){
+    const data=rows.map((tr,i)=>rowData(family,tr,i)),total=data.reduce((s,r)=>s+wonNumber(r.supply),0),paint=family==='paint';
+    const headers=paint?['No.','주문일','학생','구분','품목','수량','공급가','정산상태','정산일시']:['No.','주문일','학생','품목','수량','공급가','정산상태','정산일시'];
+    const values=data.map(r=>paint?[r.no,r.date,r.student,r.category,r.item,r.qty,r.supply,r.status,r.settled]:[r.no,r.date,r.student,r.item,r.qty,r.supply,r.status,r.settled]);
+    let html='<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;font-family:Arial,sans-serif}th,td{border:1px solid #bbb;padding:7px 9px}th{background:#eef3f8}.total td{font-weight:900;background:#f3f6fa;font-size:15px}</style></head><body>';
+    html+='<h2>HI5 '+familyLabel(family)+' 정산서</h2><p>정산기간: '+periodText()+' / 선택 '+data.length+'건</p><table><thead><tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>';
+    values.forEach(r=>{html+='<tr>'+r.map(v=>'<td>'+String(v??'')+'</td>').join('')+'</tr>'});
+    html+='<tr class="total"><td colspan="'+(headers.length-1)+'">정산금액 총계</td><td>'+total.toLocaleString('ko-KR')+'원</td></tr></tbody></table></body></html>';
+    downloadBlob(new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),'HI5_'+familyLabel(family)+'_정산_'+new Date().toISOString().slice(0,10)+'.xls');
+  }
+  function wrap(ctx,t,w){const chars=Array.from(String(t||'')),lines=[];let line='';chars.forEach(ch=>{const test=line+ch;if(ctx.measureText(test).width>w&&line){lines.push(line);line=ch}else line=test});if(line)lines.push(line);return lines.length?lines:['']}
+  function exportSettlementPng(family,rows){
+    const data=rows.map((tr,i)=>rowData(family,tr,i)),paint=family==='paint',total=data.reduce((s,r)=>s+wonNumber(r.supply),0);
+    const heads=paint?['No.','주문일','학생','구분','품목','수량','공급가','상태']:['No.','주문일','학생','품목','수량','공급가','상태'];
+    const keys=paint?['no','date','student','category','item','qty','supply','status']:['no','date','student','item','qty','supply','status'];
+    const widths=paint?[55,150,110,105,300,70,120,105]:[55,150,110,330,70,120,105],W=widths.reduce((a,b)=>a+b,0)+40,titleH=100,headH=44,rowH=48,totalH=58,H=titleH+headH+data.length*rowH+totalH+30;
+    const c=document.createElement('canvas'),scale=2;c.width=W*scale;c.height=H*scale;const ctx=c.getContext('2d');ctx.scale(scale,scale);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.fillStyle='#172033';ctx.font='bold 22px Arial';ctx.fillText('HI5 '+familyLabel(family)+' 정산서',20,30);ctx.font='13px Arial';ctx.fillStyle='#5f6878';ctx.fillText('정산기간: '+periodText(),20,55);ctx.fillText('선택 '+data.length+'건',20,76);
+    let y=titleH,x=20;ctx.font='bold 12px Arial';ctx.textBaseline='middle';ctx.textAlign='center';heads.forEach((h,i)=>{ctx.fillStyle='#eef3f8';ctx.fillRect(x,y,widths[i],headH);ctx.strokeStyle='#cfd6df';ctx.strokeRect(x,y,widths[i],headH);ctx.fillStyle='#263244';ctx.fillText(h,x+widths[i]/2,y+headH/2);x+=widths[i]});y+=headH;ctx.font='12px Arial';
+    data.forEach((r,ri)=>{x=20;keys.forEach((k,i)=>{ctx.fillStyle=ri%2===0?'#fff':'#fafbfc';ctx.fillRect(x,y,widths[i],rowH);ctx.strokeStyle='#d9dee6';ctx.strokeRect(x,y,widths[i],rowH);ctx.fillStyle='#283346';const lines=wrap(ctx,r[k],widths[i]-12).slice(0,2);lines.forEach((line,li)=>ctx.fillText(line,x+widths[i]/2,y+rowH/2+(li-(lines.length-1)/2)*15));x+=widths[i]});y+=rowH});
+    ctx.fillStyle='#f3f6fa';ctx.fillRect(20,y,W-40,totalH);ctx.strokeStyle='#cfd6df';ctx.strokeRect(20,y,W-40,totalH);ctx.textAlign='left';ctx.font='bold 17px Arial';ctx.fillStyle='#172033';ctx.fillText('정산금액 총계',35,y+totalH/2);ctx.textAlign='right';ctx.fillText(total.toLocaleString('ko-KR')+'원',W-35,y+totalH/2);c.toBlob(b=>{if(b)downloadBlob(b,'HI5_'+familyLabel(family)+'_정산_'+new Date().toISOString().slice(0,10)+'.png')},'image/png');
+  }
+  document.addEventListener('click',function(e){const b=e.target.closest('[data-settle-export]');if(!b)return;const family=b.dataset.settleExport,rows=selectedSettlementRows(family);if(!rows.length){alert('다운로드할 정산 항목을 먼저 체크해 주세요.');return;}if(b.dataset.exportType==='excel')exportSettlementExcel(family,rows);else exportSettlementPng(family,rows)},true);
+})();
+</script>
+\n<script id="admin-v33-detail-download-runtime">
+(function(){
+function w(n){return Number(n||0).toLocaleString('ko-KR')+'원'}function t(e){return String(e?.textContent||'').trim()}function pm(s){const n=String(s||'').replace(/[^\\d-]/g,'');return n?Number(n):0}function wrap(c,s,m){const a=Array.from(String(s||'')),l=[];let x='';a.forEach(ch=>{const q=x+ch;if(c.measureText(q).width>m&&x){l.push(x);x=ch}else x=q});if(x)l.push(x);return l.length?l:['']}function ord(){const id=document.getElementById('modalBack')?.dataset.orderId;return orders.find(o=>String(o.id)===String(id))||{}}
+function dl(sheet){const rows=Array.from(sheet.querySelectorAll('tbody tr')).map(tr=>{const d=tr.querySelectorAll('td');return{name:t(d[1]),variant:t(d[2]),qty:Number(t(d[3]).replace(/[^\\d.-]/g,''))||0,amount:pm(t(d[4]))}});if(!rows.length)return;const o=ord(),kind=sheet.dataset.detailSheetKind==='paint'?'물감재료':'미술재료',W=1100,p=36,th=145,hh=46,rh=62,totH=64,col=[55,430,215,95,145],H=th+hh+rows.length*rh+totH+42,s=2,c=document.createElement('canvas');c.width=W*s;c.height=H*s;const x=c.getContext('2d');x.scale(s,s);x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#172033';x.font='900 25px Arial';x.fillText('HI5 '+kind+' 발주표',p,38);x.font='13px Arial';x.fillStyle='#586274';x.fillText('주문번호 : '+String(o.order_no||'-'),p,70);x.fillText('학생 : '+String(o.student_name||'-')+'   |   반 : '+String(o.major||'-')+' / '+String(o.class_name||'-'),p,94);x.fillText('주문일시 : '+(o.created_at?seoulDate(o.created_at):'-'),p,118);let y=th,z=p;const heads=['No.','품목','종류','수량','금액'];x.fillStyle='#eef3f8';x.fillRect(p,y,W-p*2,hh);x.strokeStyle='#cfd8e3';x.font='900 13px Arial';x.fillStyle='#263244';x.textBaseline='middle';heads.forEach((h,i)=>{x.strokeRect(z,y,col[i],hh);x.textAlign=i===1||i===2?'left':'center';x.fillText(h,i===1||i===2?z+10:z+col[i]/2,y+hh/2);z+=col[i]});y+=hh;let total=0;rows.forEach((r,i)=>{z=p;x.fillStyle=i%2?'#fafbfd':'#fff';x.fillRect(p,y,W-p*2,rh);x.strokeStyle='#d9e0e8';x.fillStyle='#283346';x.font='13px Arial';x.strokeRect(z,y,col[0],rh);x.textAlign='center';x.fillText(String(i+1),z+col[0]/2,y+rh/2);z+=col[0];x.strokeRect(z,y,col[1],rh);x.textAlign='left';wrap(x,r.name,col[1]-20).slice(0,2).forEach((q,j)=>x.fillText(q,z+10,y+21+j*18));z+=col[1];x.strokeRect(z,y,col[2],rh);wrap(x,r.variant,col[2]-20).slice(0,2).forEach((q,j)=>x.fillText(q,z+10,y+21+j*18));z+=col[2];x.strokeRect(z,y,col[3],rh);x.textAlign='center';x.fillText(String(r.qty),z+col[3]/2,y+rh/2);z+=col[3];x.strokeRect(z,y,col[4],rh);x.textAlign='right';x.font='900 13px Arial';x.fillText(w(r.amount),z+col[4]-10,y+rh/2);total+=r.amount;y+=rh});x.fillStyle='#f3f6fa';x.fillRect(p,y,W-p*2,totH);x.strokeStyle='#cfd8e3';x.strokeRect(p,y,W-p*2,totH);x.fillStyle='#172033';x.font='900 19px Arial';x.textAlign='right';x.fillText('주문금액 총계   '+w(total),W-p-14,y+totH/2);c.toBlob(b=>{if(!b)return;const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='HI5_'+kind+'_발주표_'+String(o.student_name||'학생')+'_'+String(o.order_no||'주문')+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)},'image/png')}document.addEventListener('click',e=>{const b=e.target.closest('.detail-image-download-v33');if(b)dl(b.closest('.detail-order-sheet'))},true)
+})();
+</script>\n
+
+
+<script id="admin-v35-productkey-fix">
+(function(){
+  if(typeof window.PRODUCT_KEY==="undefined"){
+    window.PRODUCT_KEY="hi5_product_master_v1";
+  }
+})();
+</script>
+
+<script id="admin-v34-products-db">
+(function(){
+  const badge=()=>document.getElementById("productDbBadgeV34");
+
+  function setBadge(text,type){
+    const el=badge();
+    if(!el)return;
+    el.textContent=text;
+    el.classList.remove("loading","error");
+    if(type)el.classList.add(type);
+  }
+
+  function state(){
+    return window.__hi5Products || null;
+  }
+
+  function dbRowToMaster(r){
+    return {
+      id:String(r.product_code),
+      db_id:r.id,
+      category:r.category,
+      name:r.name||"",
+      group:r.group_name||"",
+      sale_price:Number(r.sale_price||0),
+      supply_price:Number(r.supply_price||0),
+      active:r.active!==false,
+      options:Array.isArray(r.options)?r.options:[],
+      display_order:Number(r.display_order||0)
+    };
+  }
+
+  function masterToDbRow(p,index){
+    return {
+      product_code:String(p.id),
+      category:String(p.category||"material"),
+      name:String(p.name||""),
+      group_name:String(p.group||""),
+      sale_price:Number(p.sale_price||0),
+      supply_price:Number(p.supply_price||0),
+      active:p.active!==false,
+      options:Array.isArray(p.options)?p.options:[],
+      display_order:index+1,
+      updated_at:new Date().toISOString()
+    };
+  }
+
+  async function loadProductsFromDbV34(){
+    if(!token){
+      setBadge("로그인 후 품목 불러오기","loading");
+      return;
+    }
+
+    const s=state();
+    if(!s){
+      setBadge("품목관리 초기화 실패","error");
+      alert("품목관리 연결을 초기화하지 못했습니다.");
+      return;
+    }
+
+    setBadge("품목 불러오는 중…","loading");
+
+    try{
+      const rows=await api("/rest/v1/products?select=*&order=display_order.asc,id.asc");
+      if(!Array.isArray(rows))throw new Error("품목 데이터 형식 오류");
+
+      const next=rows.map(dbRowToMaster);
+      s.setMaster(next);
+
+      localStorage.setItem("hi5_product_master_v1",JSON.stringify(next));
+
+      s.renderProducts();
+      s.renderSettlement();
+
+      setBadge("Supabase · "+next.length+"개");
+
+      const msg=document.getElementById("productSaveMsg");
+      if(msg)msg.textContent="Supabase 품목을 불러왔습니다.";
+    }catch(e){
+      console.error(e);
+      setBadge("Supabase 불러오기 실패","error");
+      alert("품목을 Supabase에서 불러오지 못했습니다.\n\n"+e.message);
+    }
+  }
+
+  async function saveProductsToDbV34(messageEl){
+    if(!token){
+      alert("관리자 로그인이 필요합니다.");
+      return;
+    }
+
+    const s=state();
+    if(!s){
+      alert("품목관리 연결을 초기화하지 못했습니다.");
+      return;
+    }
+
+    const currentMaster=s.getMaster();
+
+    setBadge("Supabase 저장 중…","loading");
+    if(messageEl)messageEl.textContent="저장 중…";
+
+    try{
+      const currentRows=await api("/rest/v1/products?select=product_code");
+      const currentCodes=new Set((currentRows||[]).map(r=>String(r.product_code)));
+      const keepCodes=new Set(currentMaster.map(p=>String(p.id)));
+
+      const payload=currentMaster.map(masterToDbRow);
+
+      if(payload.length){
+        await api("/rest/v1/products?on_conflict=product_code",{
+          method:"POST",
+          headers:{
+            "Prefer":"resolution=merge-duplicates,return=minimal"
+          },
+          body:JSON.stringify(payload)
+        });
+      }
+
+      const removed=[...currentCodes].filter(code=>!keepCodes.has(code));
+      for(const code of removed){
+        await api("/rest/v1/products?product_code=eq."+encodeURIComponent(code),{
+          method:"DELETE",
+          headers:{"Prefer":"return=minimal"}
+        });
+      }
+
+      localStorage.setItem("hi5_product_master_v1",JSON.stringify(currentMaster));
+
+      setBadge("Supabase · 저장완료");
+      if(messageEl){
+        messageEl.textContent="Supabase 저장완료 · "+new Date().toLocaleTimeString("ko-KR",{
+          hour:"2-digit",minute:"2-digit"
+        });
+      }
+
+      // 실제 DB 저장값을 다시 읽어서 화면과 DB가 같은지 즉시 검증
+      await loadProductsFromDbV34();
+
+    }catch(e){
+      console.error(e);
+      setBadge("Supabase 저장 실패","error");
+      if(messageEl)messageEl.textContent="저장 실패";
+      alert("품목 저장에 실패했습니다.\n\n"+e.message);
+    }
+  }
+
+  // 기존 저장 버튼의 localStorage 전용 이벤트를 제거하고 DB 저장으로 재연결
+  const saveBtn=document.getElementById("saveProductsBtn");
+  if(saveBtn){
+    const clone=saveBtn.cloneNode(true);
+    saveBtn.replaceWith(clone);
+    clone.addEventListener("click",function(){
+      saveProductsToDbV34(document.getElementById("productSaveMsg"));
+    });
+  }
+
+  // 로그인 후 자동으로 DB 품목 로드
+  function start(){
+    if(token)loadProductsFromDbV34();
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(start,50));
+  }else{
+    setTimeout(start,50);
+  }
+
+  window.loadProductsFromDbV34=loadProductsFromDbV34;
+  window.saveProductsToDbV34=saveProductsToDbV34;
+})();
+</script>
+
+</body>
+</html>
