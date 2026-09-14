@@ -652,6 +652,41 @@ th.check-col,td.check-col{
 .product-db-badge-v34.error{background:#fff0f0;color:#b34848}
 </style>
 
+
+<style id="admin-v38-kakao-style">
+.kakao-btn-v38,.kakao-row-btn-v38,.detail-kakao-btn-v38{
+  border:1px solid #e4c900;background:#fee500;color:#191919;
+  border-radius:8px;font-weight:900;cursor:pointer
+}
+.kakao-btn-v38{min-height:38px;padding:0 12px;font-size:12px}
+.kakao-row-btn-v38{min-height:32px;padding:0 9px;font-size:11px;white-space:nowrap}
+.detail-kakao-btn-v38{min-height:34px;padding:0 10px;font-size:11px;margin-left:8px}
+.kakao-row-btn-v38:disabled{
+  background:#f4f5f7;border-color:#e2e5ea;color:#a1a8b3;cursor:not-allowed
+}
+.kakao-ready-note-v38{font-size:11px;color:#7b8493;margin-left:6px}
+</style>
+
+
+<style id="admin-v40-alimtalk-log-style">
+.alimtalk-log-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+.alimtalk-log-toolbar input,.alimtalk-log-toolbar select{height:42px;border:1px solid #d9dee8;border-radius:10px;padding:0 12px;background:#fff;font:inherit}
+.alimtalk-log-toolbar input{min-width:280px;flex:1}
+.alimtalk-log-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0}
+.alimtalk-log-summary .card{min-height:94px}
+.alimtalk-log-table td,.alimtalk-log-table th{white-space:nowrap;vertical-align:middle}
+.alimtalk-log-table .log-orders{white-space:normal;min-width:170px;max-width:300px;line-height:1.45}
+.alimtalk-log-table .log-student{font-weight:700}
+.alimtalk-log-badge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.alimtalk-log-badge.received{background:#eaf3ff;color:#245db6}
+.alimtalk-log-badge.unpaid{background:#fff4cc;color:#8a6500}
+.alimtalk-log-badge.manual{background:#f1ecff;color:#6546b8}
+.alimtalk-log-status.sent{color:#148344;font-weight:800}
+.alimtalk-log-status.failed{color:#d53939;font-weight:800}
+.alimtalk-log-status.pending{color:#a66a00;font-weight:800}
+@media(max-width:900px){.alimtalk-log-summary{grid-template-columns:1fr 1fr}.alimtalk-log-toolbar input{min-width:100%}}
+</style>
+
 </head>
 <body>
 <div id="loading" class="loading hidden">처리 중...</div>
@@ -681,6 +716,7 @@ th.check-col,td.check-col{
     <button type="button" data-admin-tab="settlement">💰 정산관리</button>
     
     <button type="button" data-admin-tab="products">🧰 품목관리</button>
+    <button type="button" data-admin-tab="alimtalkLogs">💬 알림톡 기록</button>
   </nav>
 
   <section id="ordersSection" class="admin-section">
@@ -744,6 +780,12 @@ th.check-col,td.check-col{
     </select>
     <button type="button" id="bulkDeliveryApply">일괄 변경</button>
   </div>
+
+  <div class="bulk-status-group">
+    <span>알림톡</span>
+    <button type="button" id="bulkUnpaidKakaoV38" class="kakao-btn-v38">선택 학생 입금안내</button>
+    <span class="kakao-ready-note-v38">실제 발송 연결됨</span>
+  </div>
 </div>
 
 <section class="tablebox">
@@ -754,7 +796,7 @@ th.check-col,td.check-col{
           <th class="check-col"><input type="checkbox" id="selectAllOrders" class="order-check" aria-label="전체 선택"></th>
           <th class="no-col">No.</th>
           <th>주문일시</th><th>학생</th><th>전공/반</th><th>주문번호</th><th>주문내역</th><th>금액</th>
-          <th>입금</th><th>발주</th><th>배부</th><th>상세</th>
+          <th>입금</th><th>발주</th><th>배부</th><th>알림톡</th><th>상세</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -899,6 +941,30 @@ th.check-col,td.check-col{
   <div id="productManageList" class="product-manage-list"></div>
   <div class="product-savebar"><span id="productSaveMsg">변경사항은 이 PC에 자동 저장됩니다.</span><span id="productDbBadgeV34" class="product-db-badge-v34">Supabase 연동</span><button class="btn primary" id="saveProductsBtn">변경 저장</button></div>
 </section>
+
+<section id="alimtalkLogsSection" class="admin-section hidden">
+  <div class="manage-toolbar">
+    <div><h2>알림톡 발송기록</h2><p>주문 접수완료·미입금 안내의 발송시간과 성공 여부를 확인합니다.</p></div>
+    <div><button class="btn" id="refreshAlimtalkLogsV40" type="button">기록 새로고침</button></div>
+  </div>
+  <div class="alimtalk-log-summary">
+    <div class="card"><div class="label">전체 기록</div><div class="num" id="alimtalkLogTotalV40">0건</div><div class="sub">저장된 발송기록</div></div>
+    <div class="card"><div class="label">발송 성공</div><div class="num" id="alimtalkLogSentV40">0건</div><div class="sub">sent</div></div>
+    <div class="card"><div class="label">발송 실패</div><div class="num" id="alimtalkLogFailedV40">0건</div><div class="sub">failed</div></div>
+    <div class="card"><div class="label">처리 중</div><div class="num" id="alimtalkLogPendingV40">0건</div><div class="sub">pending</div></div>
+  </div>
+  <div class="alimtalk-log-toolbar">
+    <input id="alimtalkLogSearchV40" placeholder="학생명 · 전화번호 · 주문번호 검색">
+    <select id="alimtalkLogTypeV40"><option value="">전체 유형</option><option value="received">접수완료 자동</option><option value="unpaid">미입금 안내</option><option value="received_manual">접수완료 재발송</option></select>
+    <select id="alimtalkLogStatusV40"><option value="">전체 상태</option><option value="sent">성공</option><option value="failed">실패</option><option value="pending">처리 중</option></select>
+    <button class="btn" id="alimtalkLogResetV40" type="button">필터 초기화</button>
+  </div>
+  <section class="tablebox">
+    <div class="tablehead"><strong>발송 상세</strong><span id="alimtalkLogCountV40">0건</span></div>
+    <div class="scroll"><table class="alimtalk-log-table"><thead><tr><th>No.</th><th>발송일시</th><th>유형</th><th>학생</th><th>전화번호</th><th>주문번호</th><th>상태</th></tr></thead><tbody id="alimtalkLogBodyV40"></tbody></table><div id="alimtalkLogEmptyV40" class="empty hidden">알림톡 발송기록이 없습니다.</div></div>
+  </section>
+</section>
+
 </main>
 
 <div id="modalBack" class="modalback hidden">
@@ -913,6 +979,7 @@ const SUPABASE_URL = "https://hcacnnlpkrupkmkicjzz.supabase.co";
 const API_KEY = "sb_publishable_gfG2nriEU9lt9atvVJTqgA_YZjk_NAV";
 let token = sessionStorage.getItem("hi5_admin_token") || "";
 let orders = [];
+let alimtalkLogsV40 = [];
 
 const $ = id => document.getElementById(id);
 const won = n => Number(n||0).toLocaleString("ko-KR")+"원";
@@ -974,11 +1041,21 @@ async function login(){
   }catch(e){$("loginMsg").textContent="로그인 실패: "+e.message;$("loginMsg").classList.remove("hidden");}
   finally{showLoading(false);}
 }
+
+function alimtalkTypeLabelV40(v){if(v==="received")return "접수완료 자동";if(v==="unpaid")return "미입금 안내";if(v==="received_manual")return "접수완료 재발송";return v||"-";}
+function alimtalkTypeClassV40(v){return v==="unpaid"?"unpaid":(v==="received_manual"?"manual":"received");}
+function alimtalkOrdersTextV40(v){if(Array.isArray(v))return v.join(", ");if(typeof v==="string"){try{const x=JSON.parse(v);if(Array.isArray(x))return x.join(", ");}catch(e){}return v;}return "-";}
+async function loadAlimtalkLogsV40(){alimtalkLogsV40=await api("/rest/v1/alimtalk_logs?select=*&order=created_at.desc&limit=1000");renderAlimtalkLogsV40();}
+function filteredAlimtalkLogsV40(){const q=String(document.getElementById("alimtalkLogSearchV40")?.value||"").trim().toLowerCase();const type=document.getElementById("alimtalkLogTypeV40")?.value||"";const status=document.getElementById("alimtalkLogStatusV40")?.value||"";return alimtalkLogsV40.filter(x=>{if(type&&x.message_type!==type)return false;if(status&&x.status!==status)return false;if(q){const hay=[x.student_name,x.phone,alimtalkOrdersTextV40(x.order_nos)].join(" ").toLowerCase();if(!hay.includes(q))return false;}return true;});}
+function renderAlimtalkLogsV40(){const body=document.getElementById("alimtalkLogBodyV40");if(!body)return;const list=filteredAlimtalkLogsV40();document.getElementById("alimtalkLogCountV40").textContent=list.length+"건";document.getElementById("alimtalkLogTotalV40").textContent=alimtalkLogsV40.length+"건";document.getElementById("alimtalkLogSentV40").textContent=alimtalkLogsV40.filter(x=>x.status==="sent").length+"건";document.getElementById("alimtalkLogFailedV40").textContent=alimtalkLogsV40.filter(x=>x.status==="failed").length+"건";document.getElementById("alimtalkLogPendingV40").textContent=alimtalkLogsV40.filter(x=>x.status==="pending").length+"건";document.getElementById("alimtalkLogEmptyV40").classList.toggle("hidden",list.length>0);body.innerHTML=list.map((x,i)=>`<tr><td>${i+1}</td><td>${x.sent_at?seoulDate(x.sent_at):seoulDate(x.created_at)}</td><td><span class="alimtalk-log-badge ${alimtalkTypeClassV40(x.message_type)}">${esc(alimtalkTypeLabelV40(x.message_type))}</span></td><td class="log-student">${esc(x.student_name||"-")}</td><td>${esc(x.phone||"-")}</td><td class="log-orders">${esc(alimtalkOrdersTextV40(x.order_nos))}</td><td class="alimtalk-log-status ${esc(x.status||"")}">${esc(x.status==="sent"?"성공":(x.status==="failed"?"실패":(x.status==="pending"?"처리 중":x.status||"-")))}</td></tr>`).join("");}
+async function recordAdminAlimtalkV40(o,type,responseData){const row={message_type:type==="unpaid"?"unpaid":"received_manual",dedupe_key:null,order_nos:[String(o.order_no||"")].filter(Boolean),student_name:String(o.student_name||""),phone:String(o.phone||""),status:"sent",provider_response:responseData||{},sent_at:new Date().toISOString()};try{const saved=await api("/rest/v1/alimtalk_logs",{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify(row)});if(Array.isArray(saved)&&saved[0])alimtalkLogsV40.unshift(saved[0]);else alimtalkLogsV40.unshift(Object.assign({id:"local-"+Date.now(),created_at:row.sent_at},row));renderAlimtalkLogsV40();}catch(e){console.warn("관리자 알림톡 발송기록 저장 실패",e);}}
+
 async function loadOrders(){
   showLoading(true);
   try{
     orders=await api("/rest/v1/orders?select=*&order=created_at.desc");
     updateStats(); render();
+    try{await loadAlimtalkLogsV40();}catch(logErr){console.warn("알림톡 기록을 불러오지 못했습니다.",logErr);}
   }catch(e){
     alert("주문목록을 불러오지 못했습니다. 관리자 SELECT 정책을 확인해 주세요.\\n\\n"+e.message);
   }finally{showLoading(false);}
@@ -1078,6 +1155,7 @@ function render(scrollTop=true){
     <td>${statusSelect(o.id,"payment_status",o.payment_status||"입금대기",["입금대기","입금완료"])}</td>
     <td>${statusSelect(o.id,"order_status",o.order_status||"발주대기",["발주대기","발주완료","배송중","입고완료"])}</td>
     <td>${statusSelect(o.id,"delivery_status",o.delivery_status||"배부대기",["배부대기","배부완료"])}</td>
+    <td><button type="button" class="kakao-row-btn-v38" data-kakao-unpaid="${o.id}" ${o.payment_status==="입금완료"?"disabled":""}>${o.payment_status==="입금완료"?"입금완료":"입금안내 톡"}</button></td>
     <td><button class="detailbtn" data-detail="${o.id}">보기</button></td>
   </tr>`).join("");
   document.querySelectorAll(".status-select").forEach(el=>el.addEventListener("change",()=>updateStatus(el.dataset.id,el.dataset.field,el.value,el)));
@@ -1119,7 +1197,7 @@ function isPaintItem(x){return /패스|미션골드|포스터칼라 A|SWC|홀베
 function detailSheetHtml(title,rows,kind){
   const grouped=groupDetailItems(rows),total=grouped.reduce((a,r)=>a+Number(r.amount||0),0);
   return `<div class="detail-order-sheet ${kind==='paint'?'paint-capture-sheet':''}" data-detail-sheet-kind="${kind}">
-  <div class="detail-order-sheet-head"><strong>${title}</strong><div class="detail-order-sheet-actions"><span>${grouped.length}종</span><button type="button" class="detail-image-download-v33">이미지 다운로드</button></div></div>
+  <div class="detail-order-sheet-head"><strong>${title}</strong><div class="detail-order-sheet-actions"><span>${grouped.length}종</span><button type="button" class="detail-kakao-btn-v38">주문접수 알림 재발송</button><button type="button" class="detail-image-download-v33">이미지 다운로드</button></div></div>
   <table><thead><tr><th class="num">No.</th><th>품목명</th><th>종류</th><th class="num">수량</th><th class="money">금액</th></tr></thead><tbody>${grouped.map((r,i)=>`<tr><td class="num">${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.variant)}</td><td class="num">${r.qty}</td><td class="money">${won(r.amount)}</td></tr>`).join('')}</tbody></table>
   <div class="detail-order-sheet-total"><span>주문금액 총계</span><span>${won(total)}</span></div><div class="detail-capture-note">업체 발주용: 동일 품목 + 동일 종류는 수량과 금액을 합산했습니다.</div></div>`;
 }
@@ -1200,7 +1278,8 @@ if(token){
       orders:'ordersSection',
       procurement:'procurementSection',
       products:'productsSection',
-      settlement:'settlementSection'
+      settlement:'settlementSection',
+      alimtalkLogs:'alimtalkLogsSection'
     };
     Object.keys(map).forEach(function(k){
       var el=document.getElementById(map[k]);
@@ -2257,6 +2336,224 @@ function dl(sheet){const rows=Array.from(sheet.querySelectorAll('tbody tr')).map
   window.loadProductsFromDbV34=loadProductsFromDbV34;
   window.saveProductsToDbV34=saveProductsToDbV34;
 })();
+</script>
+
+
+<script id="admin-v39-kakao-runtime">
+(function(){
+  function getOrdersV39(){
+    try{return Array.isArray(orders)?orders:[]}catch(e){return []}
+  }
+
+  function refreshKakaoButtonsV39(){
+    const list=getOrdersV39();
+    document.querySelectorAll("[data-kakao-unpaid]").forEach(btn=>{
+      const o=list.find(x=>String(x.id)===String(btn.dataset.kakaoUnpaid||""));
+      if(!o)return;
+      const paid=o.payment_status==="입금완료";
+      if(btn.dataset.sending==="1") return;
+      btn.disabled=paid;
+      btn.textContent=paid?"입금완료":"입금안내 톡";
+    });
+  }
+
+  function selectedOrdersV39(){
+    const ids=Array.from(document.querySelectorAll(".row-order-check:checked"))
+      .map(cb=>String(cb.dataset.orderId||""));
+    return getOrdersV39().filter(o=>ids.includes(String(o.id)));
+  }
+
+  function orderDateV39(o){
+    try{return localParts(o.created_at)}catch(e){
+      const d=new Date(o.created_at||Date.now());
+      return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
+    }
+  }
+
+  function errorTextV39(value){
+    if(value==null)return "알 수 없는 오류";
+    if(typeof value==="string")return value;
+    if(value.message)return String(value.message);
+    if(value.error){
+      if(typeof value.error==="string")return value.error;
+      try{return JSON.stringify(value.error)}catch(e){return String(value.error)}
+    }
+    try{return JSON.stringify(value)}catch(e){return String(value)}
+  }
+
+  async function sendAlimtalkV39(o,type){
+    if(!o)throw new Error("주문 정보를 찾을 수 없습니다.");
+    if(!token)throw new Error("관리자 로그인이 만료되었습니다. 다시 로그인해 주세요.");
+    if(!o.phone)throw new Error("학생 휴대폰 번호가 없습니다.");
+
+    const payload={
+      type:type,
+      to:String(o.phone||""),
+      studentName:String(o.student_name||""),
+      className:String(o.class_name||""),
+      orderDate:orderDateV39(o),
+      totalAmount:Number(o.total_amount||0)
+    };
+
+    const res=await fetch(SUPABASE_URL+"/functions/v1/send-solapi-alimtalk",{
+      method:"POST",
+      headers:{
+        "apikey":API_KEY,
+        "Authorization":"Bearer "+token,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify(payload)
+    });
+
+    let data=null;
+    const raw=await res.text();
+    try{data=raw?JSON.parse(raw):null}catch(e){data={error:raw}}
+
+    if(res.status===401){
+      throw new Error("관리자 인증이 만료되었거나 Edge Function 인증 설정을 확인해야 합니다.");
+    }
+    if(!res.ok || !data || data.ok!==true){
+      throw new Error(errorTextV39(data||("HTTP "+res.status)));
+    }
+    await recordAdminAlimtalkV40(o,type,data);
+    return data;
+  }
+
+  async function sendSingleUnpaidV39(btn,o){
+    if(o.payment_status==="입금완료"){
+      alert("이미 입금완료된 주문입니다.");
+      return;
+    }
+    if(!confirm((o.student_name||"학생")+" 학생에게 미입금 안내 알림톡을 보낼까요?\n\n주문금액: "+Number(o.total_amount||0).toLocaleString("ko-KR")+"원"))return;
+
+    const old=btn.textContent;
+    btn.dataset.sending="1";
+    btn.disabled=true;
+    btn.textContent="발송중...";
+    try{
+      await sendAlimtalkV39(o,"unpaid");
+      btn.textContent="발송완료";
+      alert((o.student_name||"학생")+" 학생에게 미입금 안내 알림톡을 발송했습니다.");
+    }catch(err){
+      alert("알림톡 발송 실패\n\n"+(err&&err.message?err.message:String(err)));
+    }finally{
+      delete btn.dataset.sending;
+      setTimeout(()=>{
+        btn.textContent=old;
+        refreshKakaoButtonsV39();
+      },500);
+    }
+  }
+
+  async function sendBulkUnpaidV39(unpaid,paid){
+    const bulkBtn=document.getElementById("bulkUnpaidKakaoV38");
+    let confirmText="입금대기 "+unpaid.length+"건에 미입금 안내 알림톡을 발송할까요?";
+    if(paid>0)confirmText+="\n\n입금완료 "+paid+"건은 자동으로 제외됩니다.";
+    if(!confirm(confirmText))return;
+
+    if(bulkBtn){bulkBtn.disabled=true;bulkBtn.textContent="발송중 0/"+unpaid.length;}
+    let success=0;
+    const failed=[];
+
+    for(let i=0;i<unpaid.length;i++){
+      const o=unpaid[i];
+      if(bulkBtn)bulkBtn.textContent="발송중 "+(i+1)+"/"+unpaid.length;
+      try{
+        await sendAlimtalkV39(o,"unpaid");
+        success++;
+      }catch(err){
+        failed.push({o,error:err&&err.message?err.message:String(err)});
+      }
+    }
+
+    if(bulkBtn){bulkBtn.disabled=false;bulkBtn.textContent="선택 학생 입금안내";}
+    let msg="미입금 안내 발송 결과\n\n성공: "+success+"건\n실패: "+failed.length+"건";
+    if(paid>0)msg+="\n입금완료 제외: "+paid+"건";
+    if(failed.length){
+      msg+="\n\n실패 주문:";
+      failed.slice(0,5).forEach(x=>{msg+="\n- "+(x.o.student_name||"학생")+": "+x.error;});
+      if(failed.length>5)msg+="\n외 "+(failed.length-5)+"건";
+    }
+    alert(msg);
+  }
+
+  async function resendReceiptV39(btn){
+    const modal=document.getElementById("modalBack");
+    const id=modal&&modal.dataset?modal.dataset.orderId:"";
+    const o=getOrdersV39().find(x=>String(x.id)===String(id||""));
+    if(!o){alert("주문 정보를 찾을 수 없습니다.");return;}
+    if(!confirm((o.student_name||"학생")+" 학생에게 주문접수 완료 알림톡을 다시 보낼까요?"))return;
+
+    const old=btn.textContent;
+    btn.disabled=true;
+    btn.textContent="발송중...";
+    try{
+      await sendAlimtalkV39(o,"received");
+      btn.textContent="발송완료";
+      alert((o.student_name||"학생")+" 학생에게 주문접수 완료 알림톡을 발송했습니다.");
+    }catch(err){
+      alert("알림톡 발송 실패\n\n"+(err&&err.message?err.message:String(err)));
+    }finally{
+      setTimeout(()=>{btn.disabled=false;btn.textContent=old;},500);
+    }
+  }
+
+  document.addEventListener("click",function(e){
+    const rowBtn=e.target.closest("[data-kakao-unpaid]");
+    if(rowBtn){
+      const o=getOrdersV39().find(x=>String(x.id)===String(rowBtn.dataset.kakaoUnpaid||""));
+      if(!o)return;
+      sendSingleUnpaidV39(rowBtn,o);
+      return;
+    }
+
+    if(e.target.closest("#bulkUnpaidKakaoV38")){
+      const selected=selectedOrdersV39();
+      if(!selected.length){
+        alert("입금안내를 보낼 주문을 먼저 선택해 주세요.");
+        return;
+      }
+      const unpaid=selected.filter(o=>o.payment_status!=="입금완료");
+      const paid=selected.length-unpaid.length;
+      if(!unpaid.length){
+        alert("선택한 주문은 모두 입금완료 상태입니다.");
+        return;
+      }
+      sendBulkUnpaidV39(unpaid,paid);
+      return;
+    }
+
+    const receiptBtn=e.target.closest(".detail-kakao-btn-v38");
+    if(receiptBtn){
+      resendReceiptV39(receiptBtn);
+      return;
+    }
+  },true);
+
+  document.addEventListener("change",function(e){
+    if(e.target.matches('select[data-field="payment_status"],select.status-select[data-field="payment_status"]')){
+      setTimeout(refreshKakaoButtonsV39,30);
+    }
+  },true);
+
+  const tbody=document.getElementById("tbody");
+  if(tbody){
+    new MutationObserver(()=>setTimeout(refreshKakaoButtonsV39,0))
+      .observe(tbody,{childList:true,subtree:true});
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(refreshKakaoButtonsV39,50));
+  }else{
+    setTimeout(refreshKakaoButtonsV39,50);
+  }
+})();
+
+
+  document.addEventListener("input",function(e){if(e.target&&e.target.id==="alimtalkLogSearchV40")renderAlimtalkLogsV40();});
+  document.addEventListener("change",function(e){if(e.target&&(e.target.id==="alimtalkLogTypeV40"||e.target.id==="alimtalkLogStatusV40"))renderAlimtalkLogsV40();});
+  document.addEventListener("click",function(e){if(e.target.closest("#refreshAlimtalkLogsV40")){loadAlimtalkLogsV40().catch(err=>alert("알림톡 기록 불러오기 실패: "+err.message));}if(e.target.closest("#alimtalkLogResetV40")){const q=document.getElementById("alimtalkLogSearchV40"),t=document.getElementById("alimtalkLogTypeV40"),s=document.getElementById("alimtalkLogStatusV40");if(q)q.value="";if(t)t.value="";if(s)s.value="";renderAlimtalkLogsV40();}if(e.target.closest('[data-admin-tab="alimtalkLogs"]'))renderAlimtalkLogsV40();});
+
 </script>
 
 </body>
