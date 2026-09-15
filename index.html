@@ -939,7 +939,7 @@ th.check-col,td.check-col{
     <button data-product-tab="ani">애니 물감</button>
   </div>
   <div id="productManageList" class="product-manage-list"></div>
-  <div class="product-savebar"><span id="productSaveMsg">변경사항은 이 PC에 자동 저장됩니다.</span><span id="productDbBadgeV34" class="product-db-badge-v34">Supabase 연동</span><button class="btn primary" id="saveProductsBtn">변경 저장</button></div>
+  <div class="product-savebar"><span id="productSaveMsg">Supabase 자동저장 준비중…</span><span id="productDbBadgeV34" class="product-db-badge-v34">Supabase 연동</span><button class="btn primary" id="saveProductsBtn">변경 저장</button></div>
 </section>
 
 <section id="alimtalkLogsSection" class="admin-section hidden">
@@ -2554,6 +2554,131 @@ function dl(sheet){const rows=Array.from(sheet.querySelectorAll('tbody tr')).map
   document.addEventListener("change",function(e){if(e.target&&(e.target.id==="alimtalkLogTypeV40"||e.target.id==="alimtalkLogStatusV40"))renderAlimtalkLogsV40();});
   document.addEventListener("click",function(e){if(e.target.closest("#refreshAlimtalkLogsV40")){loadAlimtalkLogsV40().catch(err=>alert("알림톡 기록 불러오기 실패: "+err.message));}if(e.target.closest("#alimtalkLogResetV40")){const q=document.getElementById("alimtalkLogSearchV40"),t=document.getElementById("alimtalkLogTypeV40"),s=document.getElementById("alimtalkLogStatusV40");if(q)q.value="";if(t)t.value="";if(s)s.value="";renderAlimtalkLogsV40();}if(e.target.closest('[data-admin-tab="alimtalkLogs"]'))renderAlimtalkLogsV40();});
 
+</script>
+
+
+<script id="admin-v43-products-manual-save-ui">
+(function(){
+  function initManualSaveUi(){
+    const btn=document.getElementById('saveProductsBtn');
+    if(btn) btn.textContent='변경 저장';
+    const msg=document.getElementById('productSaveMsg');
+    if(msg) msg.textContent='품목 변경 후 아래 변경 저장 버튼을 눌러주세요. 저장하면 다른 컴퓨터에도 공용 반영됩니다.';
+    const badge=document.getElementById('productDbBadgeV34');
+    if(badge) badge.textContent='Supabase 공용 연동';
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(initManualSaveUi,400));
+  else setTimeout(initManualSaveUi,400);
+})();
+</script>
+
+
+<script id="admin-v45-products-manual-db-final">
+(function(){
+  function state(){ return window.__hi5Products || null; }
+  function num(v){ return Number(String(v??'').replace(/[^0-9.-]/g,''))||0; }
+
+  function syncAllVisibleRows(){
+    const s=state(); if(!s) return;
+    const master=s.getMaster();
+    document.querySelectorAll('.product-manage-row[data-pid]').forEach(row=>{
+      const p=master.find(x=>String(x.id)===String(row.dataset.pid));
+      if(!p) return;
+      row.querySelectorAll('input[data-f]').forEach(el=>{
+        const f=el.dataset.f;
+        if(f==='active') p.active=!!el.checked;
+        else if(f==='sale_price' || f==='supply_price') p[f]=num(el.value);
+        else p[f]=el.value;
+      });
+      if(p.category!=='material'){
+        const opts=[...row.querySelectorAll('.option-name-v30')].map(x=>String(x.value||'').trim());
+        if(opts.length) p.options=opts;
+      }
+    });
+  }
+
+  async function saveAllProductsToSharedDb(){
+    if(!token){ alert('관리자 로그인이 필요합니다.'); return; }
+    const s=state(); if(!s){ alert('품목관리 연결을 초기화하지 못했습니다.'); return; }
+    syncAllVisibleRows();
+    const master=s.getMaster();
+    const msg=document.getElementById('productSaveMsg');
+    const badge=document.getElementById('productDbBadgeV34');
+    const btn=document.getElementById('saveProductsBtn');
+    if(btn) btn.disabled=true;
+    if(msg) msg.textContent='공용 DB 저장 중…';
+    if(badge) badge.textContent='Supabase · 저장 중';
+    try{
+      const payload=master.map((p,i)=>({
+        product_code:String(p.id),
+        category:String(p.category||'material'),
+        name:String(p.name||''),
+        group_name:String(p.group||''),
+        sale_price:Number(p.sale_price||0),
+        supply_price:Number(p.supply_price||0),
+        active:p.active!==false,
+        options:Array.isArray(p.options)?p.options:[],
+        display_order:i+1,
+        updated_at:new Date().toISOString()
+      }));
+
+      await api('/rest/v1/products?on_conflict=product_code',{
+        method:'POST',
+        headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+        body:JSON.stringify(payload)
+      });
+
+      // DB에서 즉시 다시 읽어 저장 결과를 검증하고 화면도 동일한 값으로 교체
+      const rows=await api('/rest/v1/products?select=*&order=display_order.asc,id.asc');
+      if(!Array.isArray(rows)) throw new Error('저장 후 DB 확인에 실패했습니다.');
+      const next=rows.map(r=>({
+        id:String(r.product_code), db_id:r.id, category:r.category,
+        name:r.name||'', group:r.group_name||'',
+        sale_price:Number(r.sale_price||0), supply_price:Number(r.supply_price||0),
+        active:r.active!==false, options:Array.isArray(r.options)?r.options:[],
+        display_order:Number(r.display_order||0)
+      }));
+      s.setMaster(next);
+      localStorage.setItem('hi5_product_master_v1',JSON.stringify(next));
+      s.renderProducts(); s.renderSettlement();
+      if(msg) msg.textContent='공용 DB 저장완료 · '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+      if(badge) badge.textContent='Supabase · '+next.length+'개 · 저장완료';
+    }catch(err){
+      console.error(err);
+      if(msg) msg.textContent='저장 실패';
+      if(badge) badge.textContent='Supabase 저장 실패';
+      alert('공용 DB 저장에 실패했습니다.\n\n'+(err?.message||err));
+    }finally{
+      if(btn) btn.disabled=false;
+    }
+  }
+
+  async function reloadSharedDb(){
+    if(!token){alert('관리자 로그인이 필요합니다.');return;}
+    if(window.loadProductsFromDbV34) await window.loadProductsFromDbV34();
+  }
+
+  function install(){
+    const old=document.getElementById('saveProductsBtn');
+    if(old){
+      const b=old.cloneNode(true);
+      old.replaceWith(b);
+      b.textContent='변경 저장';
+      b.addEventListener('click',saveAllProductsToSharedDb);
+    }
+    const bar=document.querySelector('.product-savebar');
+    if(bar && !document.getElementById('reloadProductsBtnV45')){
+      const r=document.createElement('button');
+      r.type='button'; r.id='reloadProductsBtnV45'; r.className='btn'; r.textContent='최신값 불러오기';
+      r.addEventListener('click',reloadSharedDb); bar.appendChild(r);
+    }
+    const msg=document.getElementById('productSaveMsg');
+    if(msg) msg.textContent='수정 후 「변경 저장」을 누르면 모든 품목이 Supabase 공용 DB에 저장됩니다.';
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(install,500));
+  else setTimeout(install,500);
+  window.saveAllProductsToSharedDbV45=saveAllProductsToSharedDb;
+})();
 </script>
 
 </body>
