@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- HI5 Admin v47: cancel without reason + bulk cancel + settlement exclusion -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -740,7 +741,7 @@ th.check-col,td.check-col{
       <option value="하이클래스/학종반">하이클래스/학종반</option>
     </select>
     <select id="payment"><option value="">전체 입금</option><option>입금대기</option><option>입금완료</option></select>
-    <select id="orderStatus"><option value="">전체 발주</option><option>발주대기</option><option>발주완료</option><option>배송중</option><option>입고완료</option></select>
+    <select id="orderStatus"><option value="">전체 발주</option><option>발주대기</option><option>발주완료</option><option>배송중</option><option>입고완료</option><option>취소</option></select>
     <select id="delivery"><option value="">전체 배부</option><option>배부대기</option><option>배부완료</option></select>
     <button class="btn" id="resetBtn">필터 초기화</button>
   </section>
@@ -782,6 +783,11 @@ th.check-col,td.check-col{
   </div>
 
   <div class="bulk-status-group">
+    <span>주문관리</span>
+    <button type="button" id="bulkCancelOrdersV47" style="background:#b42318;color:#fff;border-color:#b42318">선택 주문취소</button>
+  </div>
+
+  <div class="bulk-status-group">
     <span>알림톡</span>
     <button type="button" id="bulkUnpaidKakaoV38" class="kakao-btn-v38">선택 학생 입금안내</button>
     <span class="kakao-ready-note-v38">실제 발송 연결됨</span>
@@ -796,7 +802,7 @@ th.check-col,td.check-col{
           <th class="check-col"><input type="checkbox" id="selectAllOrders" class="order-check" aria-label="전체 선택"></th>
           <th class="no-col">No.</th>
           <th>주문일시</th><th>학생</th><th>전공/반</th><th>주문번호</th><th>주문내역</th><th>금액</th>
-          <th>입금</th><th>발주</th><th>배부</th><th>알림톡</th><th>상세</th>
+          <th>입금</th><th>발주</th><th>배부</th><th>알림톡</th><th>상세</th><th>관리</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -1140,10 +1146,69 @@ async function bulkUpdateStatus(field,value){
   }
 }
 
+function isCancelledV46(o){return String(o.order_status||"")==="취소";}
+async function cancelOrderV46(id){
+  const o=orders.find(x=>String(x.id)===String(id)); if(!o)return;
+  if(isCancelledV46(o)){alert("이미 취소된 주문입니다.");return;}
+  if(!confirm(`${o.student_name||"학생"} / ${o.order_no||""}\n이 주문을 취소할까요?\n\n취소 주문은 정산에서 자동 제외됩니다.`))return;
+  showLoading(true);
+  try{
+    const payload={order_status:"취소"};
+    await api(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,{method:"PATCH",headers:{"Prefer":"return=minimal"},body:JSON.stringify(payload)});
+    Object.assign(o,payload);
+    updateStats(); render(false);
+    if(typeof renderSettlementAll==='function')renderSettlementAll();
+    alert("주문을 취소했습니다. 정산 대상에서도 제외됩니다.");
+  }catch(e){alert("주문 취소 실패: "+e.message); await loadOrders();}
+  finally{showLoading(false);}
+}
+
+async function bulkCancelOrdersV47(){
+  const ids=selectedOrderIds().filter(id=>{
+    const o=orders.find(x=>String(x.id)===String(id));
+    return o && !isCancelledV46(o);
+  });
+  if(!ids.length){alert("취소할 주문을 선택해 주세요.");return;}
+  if(!confirm(`선택한 ${ids.length}건의 주문을 일괄 취소할까요?\n\n취소 주문은 정산 대상에서 자동 제외됩니다.`))return;
+  showLoading(true);
+  try{
+    for(const id of ids){
+      await api(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,{method:"PATCH",headers:{"Prefer":"return=minimal"},body:JSON.stringify({order_status:"취소"})});
+      const o=orders.find(x=>String(x.id)===String(id));
+      if(o)o.order_status="취소";
+    }
+    updateStats(); render(false);
+    if(typeof renderSettlementAll==='function')renderSettlementAll();
+    alert(`${ids.length}건의 주문을 취소했습니다.`);
+  }catch(e){
+    alert("일괄 주문취소 실패: "+e.message);
+    await loadOrders();
+  }finally{showLoading(false);}
+}
+
+async function deleteOrderV46(id){
+  const o=orders.find(x=>String(x.id)===String(id)); if(!o)return;
+  if(!isCancelledV46(o)){
+    alert("안전을 위해 먼저 '주문취소' 처리한 주문만 완전삭제할 수 있습니다.");
+    return;
+  }
+  if(!confirm(`${o.student_name||"학생"} / ${o.order_no||""}\n취소된 주문을 DB에서 완전히 삭제할까요?\n\n삭제 후에는 복구할 수 없습니다.`))return;
+  if(!confirm("정말 완전삭제할까요? 발송기록은 별도로 남아 있을 수 있습니다."))return;
+  showLoading(true);
+  try{
+    await api(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,{method:"DELETE",headers:{"Prefer":"return=minimal"}});
+    orders=orders.filter(x=>String(x.id)!==String(id));
+    window.orders=orders;
+    updateStats(); render(false);
+    if(typeof renderSettlementAll==='function')renderSettlementAll();
+    alert("주문내역을 완전히 삭제했습니다.");
+  }catch(e){alert("완전삭제 실패: "+e.message);}
+  finally{showLoading(false);}
+}
 function render(scrollTop=true){
   const a=filtered(); $("resultCount").textContent=a.length+"건";
   $("empty").classList.toggle("hidden",a.length>0);
-  $("tbody").innerHTML=a.map((o,i)=>`<tr class="${String(o.order_no||'').startsWith('PNT')?'paint-order-row':''}">
+  $("tbody").innerHTML=a.map((o,i)=>`<tr class="${String(o.order_no||'').startsWith('PNT')?'paint-order-row':''} ${isCancelledV46(o)?'cancelled-order-row':''}">
     <td class="check-col"><input type="checkbox" class="order-check row-order-check" data-order-id="${o.id}" aria-label="주문 선택"></td>
     <td class="no-col">${i+1}</td>
     <td>${seoulDate(o.created_at)}</td>
@@ -1153,13 +1218,16 @@ function render(scrollTop=true){
     <td class="items">${esc(itemSummary(o.items))}</td>
     <td class="money">${won(o.total_amount)}</td>
     <td>${statusSelect(o.id,"payment_status",o.payment_status||"입금대기",["입금대기","입금완료"])}</td>
-    <td>${statusSelect(o.id,"order_status",o.order_status||"발주대기",["발주대기","발주완료","배송중","입고완료"])}</td>
+    <td>${isCancelledV46(o)?'<span class="cancelled-badge-v46">취소</span>':statusSelect(o.id,"order_status",o.order_status||"발주대기",["발주대기","발주완료","배송중","입고완료"])}</td>
     <td>${statusSelect(o.id,"delivery_status",o.delivery_status||"배부대기",["배부대기","배부완료"])}</td>
-    <td><button type="button" class="kakao-row-btn-v38" data-kakao-unpaid="${o.id}" ${o.payment_status==="입금완료"?"disabled":""}>${o.payment_status==="입금완료"?"입금완료":"입금안내 톡"}</button></td>
+    <td><button type="button" class="kakao-row-btn-v38" data-kakao-unpaid="${o.id}" ${(o.payment_status==="입금완료"||isCancelledV46(o))?"disabled":""}>${isCancelledV46(o)?"취소주문":(o.payment_status==="입금완료"?"입금완료":"입금안내 톡")}</button></td>
     <td><button class="detailbtn" data-detail="${o.id}">보기</button></td>
+    <td><div class="order-action-v46">${isCancelledV46(o)?`<span class="cancelled-badge-v46">취소됨</span><button type="button" class="delete-order-v46" data-delete-order-v46="${o.id}">완전삭제</button>`:`<button type="button" class="cancel-order-v46" data-cancel-order-v46="${o.id}">주문취소</button>`}</div></td>
   </tr>`).join("");
   document.querySelectorAll(".status-select").forEach(el=>el.addEventListener("change",()=>updateStatus(el.dataset.id,el.dataset.field,el.value,el)));
   document.querySelectorAll("[data-detail]").forEach(b=>b.addEventListener("click",()=>openDetail(b.dataset.detail)));
+  document.querySelectorAll("[data-cancel-order-v46]").forEach(b=>b.addEventListener("click",()=>cancelOrderV46(b.dataset.cancelOrderV46)));
+  document.querySelectorAll("[data-delete-order-v46]").forEach(b=>b.addEventListener("click",()=>deleteOrderV46(b.dataset.deleteOrderV46)));
 
   document.querySelectorAll(".row-order-check").forEach(c=>c.addEventListener("change",updateBulkSelectedCount));
   const allBox=$("selectAllOrders");
@@ -1169,7 +1237,7 @@ function render(scrollTop=true){
   }
   updateBulkSelectedCount();
 }
-function statsFor(pred){const a=orders.filter(pred);return {count:a.length,amount:a.reduce((s,x)=>s+Number(x.total_amount||0),0)}}
+function statsFor(pred){const a=orders.filter(o=>!isCancelledV46(o)).filter(pred);return {count:a.length,amount:a.reduce((s,x)=>s+Number(x.total_amount||0),0)}}
 function updateStats(){
   const tk=todayKey(),wk=weekStartKey(),mk=monthKey();
   const t=statsFor(o=>localParts(o.created_at)===tk), w=statsFor(o=>localParts(o.created_at)>=wk), m=statsFor(o=>localParts(o.created_at).startsWith(mk));
@@ -1178,8 +1246,8 @@ function updateStats(){
   $("weekCount").textContent=w.count+"건"; $("weekAmount").textContent=won(w.amount);
   $("monthCount").textContent=m.count+"건"; $("monthAmount").textContent=won(m.amount);
   $("payWait").textContent=pw.count+"건"; $("payWaitAmount").textContent=won(pw.amount);
-  $("orderWait").textContent=orders.filter(o=>(o.order_status||"발주대기")==="발주대기").length+"건";
-  $("deliveryWait").textContent=orders.filter(o=>(o.delivery_status||"배부대기")==="배부대기").length+"건";
+  $("orderWait").textContent=orders.filter(o=>!isCancelledV46(o)&&(o.order_status||"발주대기")==="발주대기").length+"건";
+  $("deliveryWait").textContent=orders.filter(o=>!isCancelledV46(o)&&(o.delivery_status||"배부대기")==="배부대기").length+"건";
 }
 function groupDetailItems(items){
   const map=new Map();
@@ -1205,7 +1273,7 @@ function openDetail(id){
   const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
   const items=parseItems(o.items),kind=detailKind(o);let material=[],paint=[];
   if(kind==='material')material=items;else if(kind==='paint')paint=items;else items.forEach(x=>(isPaintItem(x)?paint:material).push(x));
-  $("modalBody").innerHTML=`<div class="detail-order-meta"><div class="info"><small>주문번호</small><b>${esc(o.order_no)}</b></div><div class="info"><small>주문일시</small><b>${seoulDate(o.created_at)}</b></div><div class="info"><small>학생</small><b>${esc(o.student_name)} (${esc(o.class_name)})</b></div><div class="info"><small>전공</small><b>${esc(o.major)}</b></div><div class="info"><small>휴대폰</small><b>${esc(o.phone)}</b></div><div class="info"><small>총 금액</small><b>${won(o.total_amount)}</b></div></div><div class="detail-order-sheets">${material.length?detailSheetHtml('미술재료 발주표',material,'material'):''}${paint.length?detailSheetHtml('물감재료 발주표',paint,'paint'):''}</div>`;
+  $("modalBody").innerHTML=`<div class="detail-order-meta"><div class="info"><small>주문번호</small><b>${esc(o.order_no)}</b></div><div class="info"><small>주문일시</small><b>${seoulDate(o.created_at)}</b></div><div class="info"><small>학생</small><b>${esc(o.student_name)} (${esc(o.class_name)})</b></div><div class="info"><small>전공</small><b>${esc(o.major)}</b></div><div class="info"><small>휴대폰</small><b>${esc(o.phone)}</b></div><div class="info"><small>총 금액</small><b>${won(o.total_amount)}</b></div>${isCancelledV46(o)?`<div class="info"><small>주문상태</small><b style="color:#b42318">취소됨</b></div>`:''}</div><div class="detail-order-sheets">${material.length?detailSheetHtml('미술재료 발주표',material,'material'):''}${paint.length?detailSheetHtml('물감재료 발주표',paint,'paint'):''}</div>`;
   $("modalBack").dataset.orderId=String(o.id);$("modalBack").classList.remove("hidden");
 }
 
@@ -1218,6 +1286,7 @@ $("selectAllOrders").addEventListener("change",function(){
 $("bulkPaymentApply").onclick=()=>bulkUpdateStatus("payment_status",$("bulkPayment").value);
 $("bulkOrderApply").onclick=()=>bulkUpdateStatus("order_status",$("bulkOrderStatus").value);
 $("bulkDeliveryApply").onclick=()=>bulkUpdateStatus("delivery_status",$("bulkDelivery").value);
+$("bulkCancelOrdersV47").onclick=bulkCancelOrdersV47;
 
 
 async function signupAdmin(){
@@ -1728,6 +1797,7 @@ if(token){
   function allSettlementRows(){
     const rows=[];
     (window.orders||orders||[]).forEach(o=>{
+      if(String(o.order_status||'')==='취소') return;
       parseItemsV8(o.items).forEach((it,itemIndex)=>{
         const p=matchProduct(o,it);
         const qty=Number(it.qty||0);
@@ -2130,7 +2200,18 @@ if(token){
     const data=rows.map((tr,i)=>rowData(family,tr,i)),total=data.reduce((s,r)=>s+wonNumber(r.supply),0),paint=family==='paint';
     const headers=paint?['No.','주문일','학생','구분','품목','수량','공급가','정산상태','정산일시']:['No.','주문일','학생','품목','수량','공급가','정산상태','정산일시'];
     const values=data.map(r=>paint?[r.no,r.date,r.student,r.category,r.item,r.qty,r.supply,r.status,r.settled]:[r.no,r.date,r.student,r.item,r.qty,r.supply,r.status,r.settled]);
-    let html='<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;font-family:Arial,sans-serif}th,td{border:1px solid #bbb;padding:7px 9px}th{background:#eef3f8}.total td{font-weight:900;background:#f3f6fa;font-size:15px}</style></head><body>';
+    let html='<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;font-family:Arial,sans-serif}th,td{border:1px solid #bbb;padding:7px 9px}th{background:#eef3f8}.total td{font-weight:900;background:#f3f6fa;font-size:15px}
+/* v46 주문 취소/삭제 */
+.cancelled-order-row{background:#f4f4f5!important;color:#8b8f98}
+.cancelled-order-row td{opacity:.84}
+.cancelled-order-row .order-no{text-decoration:line-through}
+.order-action-v46{display:flex;gap:6px;flex-wrap:wrap;min-width:128px}
+.order-action-v46 button{border:1px solid #d7dbe2;background:#fff;border-radius:8px;padding:7px 9px;font-size:11px;font-weight:800;cursor:pointer}
+.order-action-v46 .cancel-order-v46{color:#9b5a00;background:#fff9ed;border-color:#efd6a7}
+.order-action-v46 .delete-order-v46{color:#b42318;background:#fff5f4;border-color:#f0b8b3}
+.order-action-v46 .cancelled-badge-v46{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;background:#eceef1;color:#626873;font-size:11px;font-weight:900}
+.cancel-reason-v46{font-size:11px;color:#8a5b16;margin-top:4px;max-width:180px;white-space:normal;line-height:1.35}
+</style></head><body>';
     html+='<h2>HI5 '+familyLabel(family)+' 정산서</h2><p>정산기간: '+periodText()+' / 선택 '+data.length+'건</p><table><thead><tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>';
     values.forEach(r=>{html+='<tr>'+r.map(v=>'<td>'+String(v??'')+'</td>').join('')+'</tr>'});
     html+='<tr class="total"><td colspan="'+(headers.length-1)+'">정산금액 총계</td><td>'+total.toLocaleString('ko-KR')+'원</td></tr></tbody></table></body></html>';
