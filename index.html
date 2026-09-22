@@ -2216,7 +2216,28 @@ if(token){
 .order-action-v46 .delete-order-v46{color:#b42318;background:#fff5f4;border-color:#f0b8b3}
 .order-action-v46 .cancelled-badge-v46{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;background:#eceef1;color:#626873;font-size:11px;font-weight:900}
 .cancel-reason-v46{font-size:11px;color:#8a5b16;margin-top:4px;max-width:180px;white-space:normal;line-height:1.35}
-</style></head><body>';
+</style>
+<style id="detail-table-width-fix-v50">
+/* v50: global table min-width:1260px was clipping detail modal columns */
+.detail-order-sheet table{
+  min-width:0 !important;
+  width:100% !important;
+  table-layout:fixed !important;
+}
+.detail-order-sheet th:nth-child(1),.detail-order-sheet td:nth-child(1){width:50px!important;text-align:center!important}
+.detail-order-sheet th:nth-child(2),.detail-order-sheet td:nth-child(2){width:auto!important}
+.detail-order-sheet th:nth-child(3),.detail-order-sheet td:nth-child(3){width:105px!important}
+.detail-order-sheet th:nth-child(4),.detail-order-sheet td:nth-child(4){width:72px!important;text-align:center!important}
+.detail-order-sheet th:nth-child(5),.detail-order-sheet td:nth-child(5){width:100px!important;text-align:right!important}
+.detail-order-sheet th,.detail-order-sheet td{overflow-wrap:anywhere}
+@media(max-width:650px){
+  .detail-order-sheet th:nth-child(1),.detail-order-sheet td:nth-child(1){width:38px!important}
+  .detail-order-sheet th:nth-child(3),.detail-order-sheet td:nth-child(3){width:78px!important}
+  .detail-order-sheet th:nth-child(4),.detail-order-sheet td:nth-child(4){width:58px!important}
+  .detail-order-sheet th:nth-child(5),.detail-order-sheet td:nth-child(5){width:82px!important}
+}
+</style>
+</head><body>';
     html+='<h2>HI5 '+familyLabel(family)+' 정산서</h2><p>정산기간: '+periodText()+' / 선택 '+data.length+'건</p><table><thead><tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>';
     values.forEach(r=>{html+='<tr>'+r.map(v=>'<td>'+String(v??'')+'</td>').join('')+'</tr>'});
     html+='<tr class="total"><td colspan="'+(headers.length-1)+'">정산금액 총계</td><td>'+total.toLocaleString('ko-KR')+'원</td></tr></tbody></table></body></html>';
@@ -2828,6 +2849,111 @@ function dl(sheet){const rows=Array.from(sheet.querySelectorAll('tbody tr')).map
     var id=b.getAttribute('data-detail');
     setTimeout(function(){redraw48(id)},80);
   },true);
+})();
+</script>
+
+
+<style id="detail-qty-v51-hardfix-style">
+/* v51: 전역 table min-width 때문에 상세창 오른쪽 열이 잘리던 문제를 강제로 해제 */
+#modalBody .detail-order-sheet{overflow:hidden!important}
+#modalBody .detail-order-sheet table{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  table-layout:fixed!important;
+}
+#modalBody .detail-order-sheet th,#modalBody .detail-order-sheet td{
+  overflow:hidden!important;text-overflow:ellipsis!important;white-space:normal!important;
+}
+#modalBody .detail-order-sheet th:nth-child(1),#modalBody .detail-order-sheet td:nth-child(1){width:48px!important;text-align:center!important}
+#modalBody .detail-order-sheet th:nth-child(2),#modalBody .detail-order-sheet td:nth-child(2){width:auto!important}
+#modalBody .detail-order-sheet th:nth-child(3),#modalBody .detail-order-sheet td:nth-child(3){width:112px!important}
+#modalBody .detail-order-sheet th:nth-child(4),#modalBody .detail-order-sheet td:nth-child(4){width:68px!important;text-align:center!important}
+#modalBody .detail-order-sheet th:nth-child(5),#modalBody .detail-order-sheet td:nth-child(5){width:92px!important;text-align:right!important}
+.detail-qty-badge-v51{display:inline-flex;min-width:38px;justify-content:center;padding:4px 7px;border-radius:999px;background:#172033;color:#fff;font-weight:950;white-space:nowrap}
+@media(max-width:560px){
+ #modalBody .detail-order-sheet th:nth-child(3),#modalBody .detail-order-sheet td:nth-child(3){width:90px!important}
+ #modalBody .detail-order-sheet th:nth-child(4),#modalBody .detail-order-sheet td:nth-child(4){width:60px!important}
+ #modalBody .detail-order-sheet th:nth-child(5),#modalBody .detail-order-sheet td:nth-child(5){width:78px!important}
+}
+</style>
+<script id="detail-qty-v51-hardfix-runtime">
+(function(){
+  function E(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])}
+  function W(n){return Number(n||0).toLocaleString('ko-KR')+'원'}
+  function N(v){if(v===null||v===undefined||v==='')return 0;return Number(String(v).replace(/[^0-9.-]/g,''))||0}
+  function parse(raw){if(Array.isArray(raw))return raw;try{const x=JSON.parse(raw||'[]');return Array.isArray(x)?x:[]}catch(e){return []}}
+  function firstNum(obj,keys){for(const k of keys){if(obj&&obj[k]!==undefined&&obj[k]!==null&&String(obj[k]).trim()!==''){const n=N(obj[k]);if(n)return n}}return 0}
+  function rawQty(x){return firstNum(x,['qty','quantity','count','q','cnt','num','수량','개수'])}
+  function rawAmount(x){return firstNum(x,['amount','subtotal','line_total','lineTotal','total_price','totalPrice','sum','합계','금액'])}
+  function rawUnitPrice(x){return firstNum(x,['price','unit_price','unitPrice','sale_price','salePrice','unit_amount','단가','판매가'])}
+  function masterRows(){try{return window.__hi5Products?.getMaster?.()||[]}catch(e){return []}}
+  function orderCategory(o){const no=String(o?.order_no||'');if(no.startsWith('ART'))return'material';if(String(o?.major||'').includes('애니'))return'ani';return'design'}
+  function unitFromMaster(o,x){
+    const cat=orderCategory(o), name=String(x?.name||'').trim(), variant=String(x?.variant||'').trim();
+    const arr=masterRows().filter(p=>p.category===cat);
+    let p=arr.find(p=>String(p.name||'')===name);
+    if(!p)p=arr.find(p=>(p.options||[]).some(op=>String(op).trim()===name||String(op).trim()===variant));
+    if(!p)p=arr.find(p=>name.includes(String(p.name||''))||String(p.name||'').includes(name)||variant.includes(String(p.name||'')));
+    return p?N(p.sale_price):0;
+  }
+  function normalizeRows(o){
+    const raw=parse(o.items).map(x=>Object.assign({},x));
+    let rows=raw.map(x=>{
+      const qtyRaw=rawQty(x), qty=qtyRaw||1;
+      let unit=rawUnitPrice(x)||unitFromMaster(o,x);
+      let amount=rawAmount(x);
+      if(!amount&&unit)amount=unit*qty;
+      if(!unit&&amount&&qty)unit=amount/qty;
+      return {name:String(x.name||x.item_name||x.item||'품목'),variant:String(x.variant||x.option||x.type||x.kind||'-')||'-',qty,amount,unit,qtyExplicit:!!qtyRaw};
+    });
+    // 과거 주문 중 수량 필드가 없던 데이터는 주문 총액과 품목 단가로 가능한 범위에서 수량을 복원
+    let sum=rows.reduce((a,r)=>a+N(r.amount),0), target=N(o.total_amount), remain=target-sum;
+    if(remain>0){
+      for(const r of rows){
+        if(remain<=0)break;
+        if(r.qtyExplicit||!r.unit)continue;
+        const add=Math.floor(remain/r.unit);
+        if(add>0){r.qty+=add;r.amount+=add*r.unit;remain-=add*r.unit;}
+      }
+    }
+    // 같은 품목+같은 종류는 수량/금액 합산
+    const map=new Map();
+    for(const r of rows){const key=r.name+'||'+r.variant;if(!map.has(key))map.set(key,{name:r.name,variant:r.variant,qty:0,amount:0,unit:r.unit});const g=map.get(key);g.qty+=N(r.qty)||1;g.amount+=N(r.amount)}
+    return Array.from(map.values());
+  }
+  function isPaint(o){return String(o?.order_no||'').startsWith('PNT')}
+  function sheet(o){
+    const rows=normalizeRows(o), kind=isPaint(o)?'paint':'material', title=isPaint(o)?'물감재료 발주표':'미술재료 발주표';
+    const sum=rows.reduce((a,r)=>a+N(r.amount),0), shownTotal=N(o.total_amount)||sum;
+    return '<div class="detail-order-sheet '+(kind==='paint'?'paint-capture-sheet':'')+'" data-detail-sheet-kind="'+kind+'">'+
+      '<div class="detail-order-sheet-head"><strong>'+title+'</strong><div class="detail-order-sheet-actions"><span>'+rows.length+'종</span><button type="button" class="detail-kakao-btn-v38">주문접수 알림 재발송</button><button type="button" class="detail-image-download-v33">이미지 다운로드</button></div></div>'+
+      '<table><thead><tr><th>No.</th><th>품목명</th><th>종류</th><th>수량</th><th>금액</th></tr></thead><tbody>'+
+      rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+E(r.name)+'</td><td>'+E(r.variant)+'</td><td><span class="detail-qty-badge-v51">'+r.qty+'개</span></td><td>'+W(r.amount)+'</td></tr>').join('')+
+      '</tbody></table><div class="detail-order-sheet-total"><span>주문금액 총계</span><span>'+W(shownTotal)+'</span></div><div class="detail-capture-note">업체 발주용: 동일 품목 + 동일 종류는 수량과 금액을 합산했습니다.</div></div>';
+  }
+  function redraw(id){
+    const list=(typeof orders!=='undefined'&&Array.isArray(orders))?orders:(Array.isArray(window.orders)?window.orders:[]);
+    const o=list.find(x=>String(x.id)===String(id)); if(!o)return;
+    const body=document.getElementById('modalBody'); if(!body)return;
+    const cancelled=(typeof isCancelledV46==='function'&&isCancelledV46(o));
+    body.innerHTML='<div class="detail-order-meta"><div class="info"><small>주문번호</small><b>'+E(o.order_no)+'</b></div><div class="info"><small>주문일시</small><b>'+E(typeof seoulDate==='function'?seoulDate(o.created_at):o.created_at)+'</b></div><div class="info"><small>학생</small><b>'+E(o.student_name)+' ('+E(o.class_name)+')</b></div><div class="info"><small>전공</small><b>'+E(o.major)+'</b></div><div class="info"><small>휴대폰</small><b>'+E(o.phone)+'</b></div><div class="info"><small>총 금액</small><b>'+W(o.total_amount)+'</b></div>'+(cancelled?'<div class="info"><small>주문상태</small><b style="color:#b42318">취소됨</b></div>':'')+'</div><div class="detail-order-sheets">'+sheet(o)+'</div>';
+    const back=document.getElementById('modalBack');if(back)back.dataset.orderId=String(o.id);
+  }
+  function wrap(ctx,s,max){const a=Array.from(String(s||'')),lines=[];let line='';for(const ch of a){const t=line+ch;if(ctx.measureText(t).width>max&&line){lines.push(line);line=ch}else line=t}if(line)lines.push(line);return lines.length?lines:['']}
+  function download(o){
+    const rows=normalizeRows(o); if(!rows.length)return;
+    const kind=isPaint(o)?'물감재료':'미술재료', Wd=1100,p=36,th=145,hh=46,rh=62,totH=64,col=[55,430,215,95,145],H=th+hh+rows.length*rh+totH+42,s=2;
+    const c=document.createElement('canvas');c.width=Wd*s;c.height=H*s;const x=c.getContext('2d');x.scale(s,s);x.fillStyle='#fff';x.fillRect(0,0,Wd,H);x.fillStyle='#172033';x.font='900 25px Arial';x.fillText('HI5 '+kind+' 발주표',p,38);x.font='13px Arial';x.fillStyle='#586274';x.fillText('주문번호 : '+String(o.order_no||'-'),p,70);x.fillText('학생 : '+String(o.student_name||'-')+'   |   반 : '+String(o.major||'-')+' / '+String(o.class_name||'-'),p,94);x.fillText('주문일시 : '+(o.created_at&&typeof seoulDate==='function'?seoulDate(o.created_at):String(o.created_at||'-')),p,118);
+    let y=th,z=p;const heads=['No.','품목','종류','수량','금액'];x.fillStyle='#eef3f8';x.fillRect(p,y,Wd-p*2,hh);x.strokeStyle='#cfd8e3';x.font='900 13px Arial';x.fillStyle='#263244';x.textBaseline='middle';heads.forEach((h,i)=>{x.strokeRect(z,y,col[i],hh);x.textAlign=i===1||i===2?'left':'center';x.fillText(h,i===1||i===2?z+10:z+col[i]/2,y+hh/2);z+=col[i]});y+=hh;
+    rows.forEach((r,i)=>{z=p;x.fillStyle=i%2?'#fafbfd':'#fff';x.fillRect(p,y,Wd-p*2,rh);x.strokeStyle='#d9e0e8';x.fillStyle='#283346';x.font='13px Arial';x.strokeRect(z,y,col[0],rh);x.textAlign='center';x.fillText(String(i+1),z+col[0]/2,y+rh/2);z+=col[0];x.strokeRect(z,y,col[1],rh);x.textAlign='left';wrap(x,r.name,col[1]-20).slice(0,2).forEach((q,j)=>x.fillText(q,z+10,y+21+j*18));z+=col[1];x.strokeRect(z,y,col[2],rh);wrap(x,r.variant,col[2]-20).slice(0,2).forEach((q,j)=>x.fillText(q,z+10,y+21+j*18));z+=col[2];x.strokeRect(z,y,col[3],rh);x.textAlign='center';x.fillText(String(r.qty),z+col[3]/2,y+rh/2);z+=col[3];x.strokeRect(z,y,col[4],rh);x.textAlign='right';x.font='900 13px Arial';x.fillText(W(r.amount),z+col[4]-10,y+rh/2);y+=rh});
+    x.fillStyle='#f3f6fa';x.fillRect(p,y,Wd-p*2,totH);x.strokeStyle='#cfd8e3';x.strokeRect(p,y,Wd-p*2,totH);x.fillStyle='#172033';x.font='900 19px Arial';x.textAlign='right';x.fillText('주문금액 총계   '+W(o.total_amount||rows.reduce((a,r)=>a+r.amount,0)),Wd-p-14,y+totH/2);
+    c.toBlob(b=>{if(!b)return;const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='HI5_'+kind+'_발주표_'+String(o.student_name||'학생')+'_'+String(o.order_no||'주문')+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)},'image/png');
+  }
+  // 상세보기: 기존 렌더 직후 v51 렌더로 확정 교체
+  document.addEventListener('click',function(e){const b=e.target.closest('[data-detail]');if(!b)return;const id=b.getAttribute('data-detail');setTimeout(()=>redraw(id),0)},true);
+  // 이미지 다운로드: DOM 셀을 읽지 않고 주문 원본 데이터에서 직접 수량/금액 계산
+  document.addEventListener('click',function(e){const b=e.target.closest('.detail-image-download-v33');if(!b)return;e.preventDefault();e.stopImmediatePropagation();const id=document.getElementById('modalBack')?.dataset.orderId;const list=(typeof orders!=='undefined'&&Array.isArray(orders))?orders:(Array.isArray(window.orders)?window.orders:[]);const o=list.find(x=>String(x.id)===String(id));if(o)download(o)},true);
 })();
 </script>
 </body>
