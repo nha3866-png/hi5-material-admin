@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- HI5 Admin v47: cancel without reason + bulk cancel + settlement exclusion -->
+<!-- HI5 Admin v49: quantity-confirmed detail + v47 cancel/bulk cancel + shared DB -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -688,6 +688,11 @@ th.check-col,td.check-col{
 @media(max-width:900px){.alimtalk-log-summary{grid-template-columns:1fr 1fr}.alimtalk-log-toolbar input{min-width:100%}}
 </style>
 
+
+<style id="detail-qty-v49-style">
+.detail-qty-badge-v49{display:inline-flex;min-width:44px;justify-content:center;align-items:center;padding:5px 8px;border-radius:999px;background:#172033;color:#fff;font-weight:950;white-space:nowrap}
+.detail-order-sheet th:nth-child(4),.detail-order-sheet td:nth-child(4){text-align:center!important;min-width:72px!important}
+</style>
 </head>
 <body>
 <div id="loading" class="loading hidden">처리 중...</div>
@@ -1266,7 +1271,7 @@ function detailSheetHtml(title,rows,kind){
   const grouped=groupDetailItems(rows),total=grouped.reduce((a,r)=>a+Number(r.amount||0),0);
   return `<div class="detail-order-sheet ${kind==='paint'?'paint-capture-sheet':''}" data-detail-sheet-kind="${kind}">
   <div class="detail-order-sheet-head"><strong>${title}</strong><div class="detail-order-sheet-actions"><span>${grouped.length}종</span><button type="button" class="detail-kakao-btn-v38">주문접수 알림 재발송</button><button type="button" class="detail-image-download-v33">이미지 다운로드</button></div></div>
-  <table><thead><tr><th class="num">No.</th><th>품목명</th><th>종류</th><th class="num">수량</th><th class="money">금액</th></tr></thead><tbody>${grouped.map((r,i)=>`<tr><td class="num">${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.variant)}</td><td class="num">${r.qty}</td><td class="money">${won(r.amount)}</td></tr>`).join('')}</tbody></table>
+  <table><thead><tr><th class="num">No.</th><th>품목명</th><th>종류</th><th class="num">수량</th><th class="money">금액</th></tr></thead><tbody>${grouped.map((r,i)=>`<tr><td class="num">${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.variant)}</td><td class="num"><span class="detail-qty-badge-v49">${r.qty}개</span></td><td class="money">${won(r.amount)}</td></tr>`).join('')}</tbody></table>
   <div class="detail-order-sheet-total"><span>주문금액 총계</span><span>${won(total)}</span></div><div class="detail-capture-note">업체 발주용: 동일 품목 + 동일 종류는 수량과 금액을 합산했습니다.</div></div>`;
 }
 function openDetail(id){
@@ -2762,5 +2767,68 @@ function dl(sheet){const rows=Array.from(sheet.querySelectorAll('tbody tr')).map
 })();
 </script>
 
+
+<style id="detail-qty-v48-style">
+.detail-order-sheet table{table-layout:fixed!important;width:100%!important}
+.detail-order-sheet th:nth-child(1),.detail-order-sheet td:nth-child(1){width:54px!important;text-align:center!important}
+.detail-order-sheet th:nth-child(2),.detail-order-sheet td:nth-child(2){width:auto!important}
+.detail-order-sheet th:nth-child(3),.detail-order-sheet td:nth-child(3){width:130px!important}
+.detail-order-sheet th:nth-child(4),.detail-order-sheet td:nth-child(4){width:76px!important;text-align:center!important;font-weight:950!important}
+.detail-order-sheet th:nth-child(5),.detail-order-sheet td:nth-child(5){width:105px!important;text-align:right!important}
+.detail-qty-badge-v48{display:inline-flex;min-width:44px;justify-content:center;align-items:center;padding:5px 8px;border-radius:999px;background:#172033;color:#fff;font-weight:950;white-space:nowrap}
+@media(max-width:700px){
+ .detail-order-sheet th:nth-child(3),.detail-order-sheet td:nth-child(3){width:100px!important}
+ .detail-order-sheet th:nth-child(4),.detail-order-sheet td:nth-child(4){width:68px!important}
+ .detail-order-sheet th:nth-child(5),.detail-order-sheet td:nth-child(5){width:88px!important}
+}
+</style>
+<script id="detail-qty-v48-runtime">
+(function(){
+  function esc48(s){return String(s??'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
+  function won48(n){return Number(n||0).toLocaleString('ko-KR')+'원'}
+  function parse48(raw){if(Array.isArray(raw))return raw;try{var x=JSON.parse(raw||'[]');return Array.isArray(x)?x:[]}catch(e){return []}}
+  function group48(items){
+    var m=new Map();
+    (items||[]).forEach(function(x){
+      var name=String(x.name||'품목').trim();
+      var variant=String(x.variant||'-').trim()||'-';
+      var key=name+'||'+variant;
+      if(!m.has(key))m.set(key,{name:name,variant:variant,qty:0,amount:0});
+      var r=m.get(key);
+      r.qty += Number(x.qty||1);
+      r.amount += Number(x.amount||0);
+    });
+    return Array.from(m.values());
+  }
+  function paintLike48(x){return /패스|미션골드|포스터칼라 A|SWC|홀베인|조색|W\d{3}|컴포우즈|헬리오|세레스트|오커|카민|크림슨|코발트|바이올렛|오페라|시에나|엄버|세피아/i.test(String(x.name||'')+' '+String(x.variant||''))}
+  function sheet48(title,items,kind){
+    var rows=group48(items);
+    var total=rows.reduce(function(a,r){return a+Number(r.amount||0)},0);
+    return '<div class="detail-order-sheet '+(kind==='paint'?'paint-capture-sheet':'')+'" data-detail-sheet-kind="'+kind+'">'+
+      '<div class="detail-order-sheet-head"><strong>'+esc48(title)+'</strong><div class="detail-order-sheet-actions"><span>'+rows.length+'종</span><button type="button" class="detail-kakao-btn-v38">주문접수 알림 재발송</button><button type="button" class="detail-image-download-v33">이미지 다운로드</button></div></div>'+
+      '<table><thead><tr><th>No.</th><th>품목명</th><th>종류</th><th>수량</th><th>금액</th></tr></thead><tbody>'+
+      rows.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td>'+esc48(r.name)+'</td><td>'+esc48(r.variant)+'</td><td><span class="detail-qty-badge-v48">'+r.qty+'개</span></td><td>'+won48(r.amount)+'</td></tr>'}).join('')+
+      '</tbody></table><div class="detail-order-sheet-total"><span>주문금액 총계</span><span>'+won48(total)+'</span></div><div class="detail-capture-note">업체 발주용: 동일 품목 + 동일 종류는 수량과 금액을 합산했습니다.</div></div>';
+  }
+  function redraw48(id){
+    var list=(typeof orders!=='undefined' && Array.isArray(orders))?orders:(Array.isArray(window.orders)?window.orders:[]);
+    if(!list.length)return;
+    var o=list.find(function(x){return String(x.id)===String(id)}); if(!o)return;
+    var body=document.getElementById('modalBody'); if(!body)return;
+    var items=parse48(o.items), no=String(o.order_no||''), material=[], paint=[];
+    if(no.indexOf('ART')===0)material=items;
+    else if(no.indexOf('PNT')===0)paint=items;
+    else items.forEach(function(x){(paintLike48(x)?paint:material).push(x)});
+    var cancelled=(typeof isCancelledV46==='function'&&isCancelledV46(o));
+    body.innerHTML='<div class="detail-order-meta"><div class="info"><small>주문번호</small><b>'+esc48(o.order_no)+'</b></div><div class="info"><small>주문일시</small><b>'+esc48(typeof seoulDate==='function'?seoulDate(o.created_at):o.created_at)+'</b></div><div class="info"><small>학생</small><b>'+esc48(o.student_name)+' ('+esc48(o.class_name)+')</b></div><div class="info"><small>전공</small><b>'+esc48(o.major)+'</b></div><div class="info"><small>휴대폰</small><b>'+esc48(o.phone)+'</b></div><div class="info"><small>총 금액</small><b>'+won48(o.total_amount)+'</b></div>'+(cancelled?'<div class="info"><small>주문상태</small><b style="color:#b42318">취소됨</b></div>':'')+'</div><div class="detail-order-sheets">'+(material.length?sheet48('미술재료 발주표',material,'material'):'')+(paint.length?sheet48('물감재료 발주표',paint,'paint'):'')+'</div>';
+    var back=document.getElementById('modalBack'); if(back)back.dataset.orderId=String(o.id);
+  }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-detail]'); if(!b)return;
+    var id=b.getAttribute('data-detail');
+    setTimeout(function(){redraw48(id)},80);
+  },true);
+})();
+</script>
 </body>
 </html>
